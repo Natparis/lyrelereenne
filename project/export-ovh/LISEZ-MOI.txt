@@ -1,0 +1,69 @@
+LA LYRE LÉRÉENNE — MISE EN LIGNE SUR OVH
+========================================
+
+Contenu
+-------
+www/index.html   le site complet (pages publiques, espace membres, administration)
+www/support.js   moteur d'affichage du site, à laisser à côté de index.html
+www/assets/      photos, logo, affiches
+www/donnees.php  enregistrement des données du site sur le serveur
+www/envoi-mail.php  envoi direct des e-mails aux membres
+www/config-site.exemple.php  modèle du fichier de réglages (code du serveur, adresse d'envoi)
+www/donnees-lyre/  dossier où le serveur range les données (fermé au public)
+
+Mise en ligne (hébergement web OVH)
+-----------------------------------
+1. Espace client OVH > Web Cloud > Hébergements > votre hébergement > onglet FTP-SSH.
+   Notez le serveur FTP, l'identifiant, et définissez un mot de passe si besoin.
+2. Ouvrez un logiciel FTP (FileZilla, gratuit) et connectez-vous avec ces informations.
+3. Ouvrez le dossier « www » sur le serveur OVH.
+   Supprimez la page d'attente OVH (index.html ou index.php) si elle existe.
+4. Copiez le CONTENU du dossier www/ de cet export (index.html, support.js, assets/,
+   donnees.php, envoi-mail.php, config-site.exemple.php, donnees-lyre/)
+   dans le dossier « www » du serveur.
+5. Ouvrez votre nom de domaine dans un navigateur : le site s'affiche.
+6. Dans OVH > onglet Multisite, activez le certificat SSL (https) pour le domaine.
+
+Enregistrement des données sur le serveur (pas de base de données à créer)
+---------------------------------------------------------------------------
+1. Sur votre ordinateur, faites une copie de config-site.exemple.php et nommez-la
+   config-site.php. Ouvrez-la avec un éditeur de texte (Bloc-notes, TextEdit).
+2. Remplacez « CHANGEZ-MOI-code-du-bureau » par un code d'au moins 12 caractères,
+   connu seulement du bureau. Indiquez une adresse e-mail de votre domaine OVH
+   dans from_email (à créer dans OVH > Emails si besoin).
+3. Envoyez config-site.php dans le dossier « www » du serveur, à côté de index.html.
+4. Ouvrez l'administration du site. Dans le bandeau « Serveur OVH » en haut,
+   saisissez le code et cliquez sur « Se connecter ».
+   La première fois, les données de ce navigateur sont envoyées sur le serveur.
+   Ensuite, chaque modification est enregistrée sur le serveur automatiquement.
+5. Sur chaque autre ordinateur du bureau, saisissez le même code une fois.
+- Les actualités, l'agenda, les photos et les tarifs sont visibles de tous.
+- Les membres, élèves, professeurs, cotisations, la comptabilité et les e-mails
+  ne sont lisibles qu'avec le code du serveur.
+- Le serveur garde les 30 dernières versions dans donnees-lyre/sauvegardes/.
+- Si deux personnes modifient en même temps, la dernière enregistrée l'emporte :
+  cliquez sur « Recharger » avant une grosse saisie.
+
+Envoi direct des e-mails
+------------------------
+Dans l'administration, Écrire / Emails > Réglages des envois : choisissez
+« Envoi direct depuis le site », vérifiez l'adresse d'expédition et de réponse,
+puis cliquez sur « Envoyer un e-mail de test ».
+Pour une meilleure arrivée en boîte de réception, créez un compte gratuit sur
+brevo.com (300 e-mails par jour), validez votre adresse d'expédition, et collez
+la clé API dans brevo_key du fichier config-site.php.
+Le message de bienvenue automatique part une fois par
+jour, quand un membre du bureau ouvre l'administration.
+
+À savoir avant d'ouvrir l'administration au bureau
+---------------------------------------------------
+- Les données saisies dans l'administration et l'espace membres (membres, élèves,
+  écritures comptables, disponibilités, covoiturage, comptes…) sont pour l'instant
+  enregistrées sur le serveur dès que le code du serveur est saisi (voir plus haut).
+  Restent pour l'instant dans le navigateur de chaque personne : les annonces et
+  le covoiturage de l'espace membres, les photos de profil et les comptes d'accès.
+- Les mots de passe provisoires (lyre2026) et le code d'accès membres sont visibles
+  dans le code du site. Ne les utilisez pas pour des informations sensibles avant
+  le passage sur la base de données.
+- Les e-mails partent depuis la messagerie de la personne connectée, ou directement
+  depuis le site en mode « Envoi direct ».

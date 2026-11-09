@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&amp;family=DM+Sans:opsz,wght@9..40,300..800&amp;family=JetBrains+Mono:wght@400..700&amp;display=swap" rel="stylesheet">
+<script src="./doc-page.js"></script>
+<style>
+  body { margin:0; color:#17161c; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:#17161c; text-decoration:none; }
+  a:hover { color:#e3106e; }
+  doc-page:not(:defined) { visibility:hidden; }
+  img { display:block; }
+</style>
+</helmet>
+<doc-page size="a4">
+  <section class="page" data-screen-label="Affiche nouveau site">
+    <div style="height:100%; box-sizing:border-box; display:flex; flex-direction:column; background:#fff">
+      <div style="background:#2b6fb5; color:#fff; padding:8mm 15mm 7mm; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4mm 8mm; align-items:end">
+        <div style="display:grid; gap:4mm">
+          <div style="display:flex; align-items:center; gap:4mm">
+            <div style="width:15mm; height:15mm; background:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center"><img src="assets/logo-lyre.png" alt="La Lyre Léréenne" style="width:11mm; height:11mm; object-fit:contain"></div>
+            <div style="display:grid; gap:1mm">
+              <div style="font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:15pt">La Lyre Léréenne</div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:8pt; letter-spacing:0.12em">À L'ATTENTION DES MEMBRES</div>
+            </div>
+          </div>
+          <div style="font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:34pt; line-height:0.92; letter-spacing:-0.03em">Notre nouveau site est en ligne</div>
+          <div style="font-family:'Bricolage Grotesque',sans-serif; font-weight:700; font-size:15pt; overflow-wrap:anywhere">{{ siteTxt }}</div>
+        </div>
+        <div style="background:#fff; border-radius:4mm; padding:3mm; display:grid; gap:1.5mm; justify-items:center">
+          <div style="width:34mm; height:34mm">{{ qrImg }}</div>
+          <div style="font-size:8.5pt; color:#17161c">Scannez pour ouvrir</div>
+        </div>
+      </div>
+
+      <div style="padding:5mm 15mm 0; font-size:12pt; line-height:1.4">Le site comporte deux parties : l'une ouverte à tous, l'autre réservée aux membres.</div>
+
+      <div style="padding:4mm 15mm 0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:5mm">
+        <div style="border:0.4mm solid #d9d6cf; border-radius:5mm; padding:0 5mm 5mm; overflow:hidden; display:grid; gap:3mm; align-content:start">
+          <img src="assets/hero-tuba.png" alt="La Lyre Léréenne en concert" style="width:calc(100% + 10mm); margin:0 -5mm 1mm; height:34mm; object-fit:cover; object-position:50% 30%">
+          <div style="font-family:'JetBrains Mono',monospace; font-size:8.5pt; letter-spacing:0.12em; color:#e3106e">PARTIE 1 · OUVERTE À TOUS</div>
+          <div style="font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:17pt; line-height:1.05">Le site public</div>
+          <div style="font-size:11pt; line-height:1.4">Pour faire connaître l'association et accueillir de nouveaux musiciens.</div>
+          <div style="display:grid; gap:2mm; font-size:11pt; line-height:1.35">
+            <div style="border-top:0.5mm solid #e3106e; padding-top:2mm"><span style="font-weight:700">Les prochains concerts</span> : dates et lieux.</div>
+            <div style="border-top:0.5mm solid #e3106e; padding-top:2mm"><span style="font-weight:700">Les inscriptions</span> : tarifs et fiche en ligne pour nous rejoindre.</div>
+            <div style="border-top:0.5mm solid #e3106e; padding-top:2mm"><span style="font-weight:700">L'école, l'orchestre, la chorale</span>, les photos et le bureau.</div>
+          </div>
+        </div>
+        <div style="background:#f4efe4; border-radius:5mm; padding:0 5mm 5mm; overflow:hidden; display:grid; gap:3mm; align-content:start">
+          <img src="assets/repetition-2026.jpeg" alt="Répétition de la chorale, partition au premier plan" style="width:calc(100% + 10mm); margin:0 -5mm 1mm; height:34mm; object-fit:cover; object-position:50% 55%">
+          <div style="font-family:'JetBrains Mono',monospace; font-size:8.5pt; letter-spacing:0.12em; color:#2b6fb5">PARTIE 2 · RÉSERVÉE AUX MEMBRES</div>
+          <div style="font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:17pt; line-height:1.05">L'espace membres</div>
+          <div style="font-size:11pt; line-height:1.4">Tout est regroupé au même endroit.</div>
+          <div style="display:grid; gap:2mm; font-size:11pt; line-height:1.35">
+            <div style="border-top:0.5mm solid #2b6fb5; padding-top:2mm"><span style="font-weight:700">Répétitions, concerts</span> : le calendrier à venir.</div>
+            <div style="border-top:0.5mm solid #2b6fb5; padding-top:2mm"><span style="font-weight:700">Partitions</span> à consulter et télécharger.</div>
+            <div style="border-top:0.5mm solid #2b6fb5; padding-top:2mm"><span style="font-weight:700">Disponibilités</span> : présent, absent ou incertain.</div>
+            <div style="border-top:0.5mm solid #2b6fb5; padding-top:2mm"><span style="font-weight:700">Actualités internes</span> et <span style="font-weight:700">documents</span>.</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:4mm 15mm 0">
+        <div style="border:0.6mm solid #17161c; border-radius:5mm; padding:4mm 5mm; display:grid; grid-template-columns:auto minmax(0,1fr); gap:6mm; align-items:center">
+          <div style="display:grid; gap:2mm; justify-items:start">
+            <div style="font-family:'JetBrains Mono',monospace; font-size:8.5pt; letter-spacing:0.12em; color:#4a4853">CODE D'ACCÈS COMMUN</div>
+            <div style="background:#ffe14d; border-radius:3mm; padding:3mm 6mm; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:22pt; letter-spacing:0.08em">{{ code }}</div>
+          </div>
+          <div style="display:grid; gap:1.5mm; font-size:11pt; line-height:1.4">
+            <div style="display:flex; align-items:center; gap:2.5mm; flex-wrap:wrap">Cliquez sur le bouton <span style="display:inline-flex; align-items:center; border:0.35mm solid #2b6fb5; background:#2b6fb5; color:#fff; border-radius:999px; padding:1.2mm 3.5mm; font-family:'JetBrains Mono',monospace; font-size:9pt; letter-spacing:0.02em; line-height:1">MEMBRES</span> en haut à droite du site,</div>
+            <div>puis choisissez votre nom et saisissez le code.</div>
+            <div>À la première connexion, vous pourrez choisir votre propre code et vérifier votre e-mail, ou conserver {{ code }}.</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="flex:1; padding:4mm 15mm 0">
+        <div style="background:#f5a8c8; border-radius:5mm; padding:4mm 5mm; display:grid; gap:1.5mm">
+          <div style="font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:15pt">Pensé pour le téléphone</div>
+          <div style="font-size:10.5pt; line-height:1.4">Le site fonctionne très bien sur téléphone, aussi bien pour consulter les informations que pour en ajouter : répondre à une demande de disponibilité, publier une actualité, déposer une partition.</div>
+        </div>
+      </div>
+
+      <div style="padding:0 15mm 10mm">
+        <div style="display:flex; justify-content:space-between; gap:6mm; flex-wrap:wrap; border-top:0.4mm solid #17161c; padding-top:3.5mm; font-size:10.5pt; line-height:1.45">
+          <div><span style="font-weight:700">Une question ?</span> Jean-Luc Pinard · 06 77 52 55 13</div>
+          <div>jean-luc.pinard@orange.fr</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</doc-page>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;adresseSite&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;https://www.lalyrelereenne.fr&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Affiche&quot;},&quot;codeAcces&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;LYRE2026&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Affiche&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const raw = String(this.props.adresseSite || 'https://www.lalyrelereenne.fr').trim().replace(/#.*$/, '').replace(/\/+$/, '');
+    const url = raw || (location.origin + location.pathname.replace(/[^/]*$/, '')).replace(/\/+$/, '');
+    return {
+      siteTxt: raw ? raw.replace(/^https?:\/\//, '') : 'adresse du site à renseigner',
+      code: this.props.codeAcces || 'LYRE2026',
+      qrImg: React.createElement('img', { src: 'https://api.qrserver.com/v1/create-qr-code/?size=600x600&margin=0&data=' + encodeURIComponent(url + '/'), alt: 'QR code vers le site', style: { width: '34mm', height: '34mm', display: 'block' } })
+    };
+  }
+}
+</script>
+</body>
+</html>

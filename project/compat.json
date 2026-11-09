@@ -1,0 +1,96 @@
+{
+  "v": 1,
+  "mode": "omelette",
+  "root": "project/",
+  "title": "La Lyre Léréenne",
+  "entry": "Site Lyre Lereenne.dc.html",
+  "pages": [
+    {
+      "path": "Site Lyre Lereenne.dc.html",
+      "title": "Site Lyre Lereenne",
+      "kind": "page"
+    },
+    {
+      "path": "Affiche Sainte Cecile 2026.dc.html",
+      "title": "Affiche Sainte Cecile 2026",
+      "kind": "page"
+    },
+    {
+      "path": "Affiche QR Inscription.dc.html",
+      "title": "Affiche QR Inscription",
+      "kind": "page"
+    },
+    {
+      "path": "Affiche Nouveau Site.dc.html",
+      "title": "Affiche Nouveau Site",
+      "kind": "page"
+    },
+    {
+      "path": "Aperçu Mobile.dc.html",
+      "title": "Aperçu Mobile",
+      "kind": "page"
+    },
+    {
+      "path": "Footer Mobile - propositions.dc.html",
+      "title": "Footer Mobile - propositions",
+      "kind": "page"
+    },
+    {
+      "path": "Lyre Lereenne - 3 directions.dc.html",
+      "title": "Lyre Lereenne - 3 directions",
+      "kind": "page"
+    },
+    {
+      "path": "export-ovh/www/index.html",
+      "title": "index",
+      "kind": "page"
+    }
+  ],
+  "migratorVersion": "artifact-migrator (claude-design-backend ed667f7ac9c1)",
+  "createdAt": "2026-11-09T09:17:21.927Z",
+  "source": {
+    "v": 1,
+    "app": "claude-design",
+    "url": "https://claude.ai/design/p/665b349d-0450-46ec-af48-5a5a3733be35",
+    "projectId": "665b349d-0450-46ec-af48-5a5a3733be35",
+    "exportedAt": "2026-11-09T09:17:21.927Z"
+  },
+  "report": {
+    "itemsVersion": 2,
+    "pages": {
+      "total": 8,
+      "ok": 3,
+      "partial": 5,
+      "notMigrated": 0
+    },
+    "items": [
+      {
+        "kind": "external_blocked",
+        "path": "Affiche Nouveau Site.dc.html",
+        "text": "https://api.qrserver.com/v1/create-qr-code/?size=600x600&margin=0&data="
+      },
+      {
+        "kind": "external_blocked",
+        "path": "Affiche QR Inscription.dc.html",
+        "text": "https://api.qrserver.com/v1/create-qr-code/?size=800x800&margin=0&ecc=M&data="
+      },
+      {
+        "kind": "external_blocked",
+        "path": "Affiche Sainte Cecile 2026.dc.html",
+        "text": "https://api.qrserver.com/v1/create-qr-code/?size=600x600&margin=0&data="
+      },
+      {
+        "kind": "external_blocked",
+        "path": "export-ovh/www/index.html",
+        "text": "https://maps.google.com/maps?q=Place+Pierre+Agogu%C3%A9,+18240+L%C3%A9r%C3%A9&amp;z=17&amp;output=embed\nhttps://cdn.sheetjs.com/xlsx-0.20.3/package/xlsx.mjs"
+      },
+      {
+        "kind": "external_blocked",
+        "path": "Site Lyre Lereenne.dc.html",
+        "text": "https://maps.google.com/maps?q=Place+Pierre+Agogu%C3%A9,+18240+L%C3%A9r%C3%A9&amp;z=17&amp;output=embed\nhttps://cdn.sheetjs.com/xlsx-0.20.3/package/xlsx.mjs"
+      }
+    ],
+    "truncated": 0,
+    "truncatedLeftOut": 0
+  }
+}

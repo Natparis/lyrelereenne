@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&amp;family=DM+Sans:opsz,wght@9..40,400..700&amp;family=JetBrains+Mono:wght@400..600&amp;display=swap" rel="stylesheet">
+<style>body { margin:0; background:#efe9dc; color:#17161c; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; } a { color:inherit; text-decoration:none; } a:hover { text-decoration:none; } img { display:block; }</style>
+</helmet>
+<section style="padding:48px 56px 80px; display:flex; flex-direction:column; gap:28px">
+  <div>
+    <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:0.14em; color:#e3106e; margin-bottom:10px">PIED DE PAGE · VUE MOBILE 390 PX</div>
+    <h1 style="font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:44px; letter-spacing:-0.03em; margin:0">Deux propositions de footer</h1>
+  </div>
+  <div style="display:flex; flex-wrap:wrap; gap:40px 32px; align-items:flex-start">
+
+    <div style="display:flex; flex-direction:column; gap:12px">
+      <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:0.12em; color:#8b8893">ACTUEL</div>
+      <div style="width:390px; border:10px solid #17161c; border-radius:40px; overflow:hidden; background:#fff">
+        <div style="padding:0 20px 40px">
+          <div style="height:120px; background:repeating-linear-gradient(135deg,#f4efe4 0 8px,#fff 8px 16px); border-radius:16px; display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace; font-size:11px; color:#8b8893">fin de page</div>
+          <div style="margin-top:48px; border-top:1px solid #d9d6cf; padding:26px 0 0; display:flex; justify-content:space-between; gap:24px; flex-wrap:wrap; align-items:center">
+            <div style="display:flex; align-items:center; gap:12px">
+              <img src="assets/logo-lyre.webp" alt="" style="width:52px; height:52px; object-fit:contain">
+              <span style="font-size:14px; color:#5c5a64">La Lyre Léréenne · École de musique, harmonie et chorale · 18240 Léré</span>
+            </div>
+            <div style="display:flex; gap:10px 18px; font-size:14px; font-weight:600; flex-wrap:wrap">
+              <a href="#">Inscriptions</a><a href="#">Contact</a><a href="#">Facebook</a><a href="#">Espace membres</a><a href="#">Espace admin</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="1a" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:10px; align-items:center"><span style="background:#17161c; color:#fff; font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600; padding:4px 10px; border-radius:999px">1a</span><span style="font-weight:700; font-size:15px">Bloc sombre, liens en grandes lignes</span></div>
+      <div style="width:390px; border:10px solid #17161c; border-radius:40px; overflow:hidden; background:#fff">
+        <div style="padding:0 20px">
+          <div style="height:120px; background:repeating-linear-gradient(135deg,#f4efe4 0 8px,#fff 8px 16px); border-radius:16px; display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace; font-size:11px; color:#8b8893">fin de page</div>
+        </div>
+        <div style="margin-top:40px; background:#17161c; color:#fff; padding:32px 20px 28px; border-radius:28px 28px 0 0; display:flex; flex-direction:column; gap:24px">
+          <div style="display:flex; align-items:center; gap:14px">
+            <div style="width:56px; height:56px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; flex:none"><img src="assets/logo-lyre.webp" alt="" style="width:42px; height:42px; object-fit:contain"></div>
+            <div>
+              <div style="font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:24px; line-height:1">La Lyre Léréenne</div>
+              <div style="font-size:13.5px; color:#c9c6cf; margin-top:4px">École de musique, harmonie et chorale</div>
+            </div>
+          </div>
+          <a href="#" style="background:#e3106e; color:#fff; border-radius:999px; padding:15px 20px; font-weight:700; font-size:15.5px; display:flex; justify-content:space-between; align-items:center">S'inscrire à l'école<span>→</span></a>
+          <div style="display:flex; flex-direction:column">
+            <a href="#" style="display:flex; justify-content:space-between; align-items:center; min-height:52px; border-top:1px solid #3a3842; font-size:16px; font-weight:600">Contact<span style="color:#8b8893">→</span></a>
+            <a href="#" style="display:flex; justify-content:space-between; align-items:center; min-height:52px; border-top:1px solid #3a3842; font-size:16px; font-weight:600">Facebook<span style="color:#8b8893">↗</span></a>
+            <a href="#" style="display:flex; justify-content:space-between; align-items:center; min-height:52px; border-top:1px solid #3a3842; border-bottom:1px solid #3a3842; font-size:16px; font-weight:600">Plan d'accès<span style="color:#8b8893">→</span></a>
+          </div>
+          <div style="font-size:14px; line-height:1.55; color:#c9c6cf">Rue du Crôt Pigeon, place Agoguë, derrière la mairie, 18240 Léré</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+            <a href="#" style="border:1.5px solid #fff; border-radius:999px; min-height:46px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px">Espace membres</a>
+            <a href="#" style="border:1.5px solid #5c5a64; color:#c9c6cf; border-radius:999px; min-height:46px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px">Espace admin</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="1b" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:10px; align-items:center"><span style="background:#17161c; color:#fff; font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600; padding:4px 10px; border-radius:999px">1b</span><span style="font-weight:700; font-size:15px">Jaune, raccourcis à toucher</span></div>
+      <div style="width:390px; border:10px solid #17161c; border-radius:40px; overflow:hidden; background:#fff">
+        <div style="padding:0 20px 20px">
+          <div style="height:120px; background:repeating-linear-gradient(135deg,#f4efe4 0 8px,#fff 8px 16px); border-radius:16px; display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace; font-size:11px; color:#8b8893">fin de page</div>
+          <div style="margin-top:40px; background:#ffe14d; border:1px solid #d9d6cf; border-radius:24px; padding:24px 18px 20px; display:flex; flex-direction:column; gap:20px">
+            <div style="display:flex; flex-direction:column; align-items:center; text-align:center; gap:8px">
+              <div style="width:72px; height:72px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center"><img src="assets/logo-lyre.webp" alt="" style="width:54px; height:54px; object-fit:contain"></div>
+              <div style="font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:24px; line-height:1">La Lyre Léréenne</div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.12em">ÉCOLE · HARMONIE · CHORALE — LÉRÉ</div>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px">
+              <a href="#" style="background:#fff; border:1px solid #17161c; border-radius:16px; padding:12px 6px; display:flex; flex-direction:column; align-items:center; gap:6px; font-size:13px; font-weight:700"><span style="width:10px; height:10px; border-radius:50%; background:#e3106e"></span>Inscriptions</a>
+              <a href="#" style="background:#fff; border:1px solid #17161c; border-radius:16px; padding:12px 6px; display:flex; flex-direction:column; align-items:center; gap:6px; font-size:13px; font-weight:700"><span style="width:10px; height:10px; border-radius:50%; background:#2b6fb5"></span>Contact</a>
+              <a href="#" style="background:#fff; border:1px solid #17161c; border-radius:16px; padding:12px 6px; display:flex; flex-direction:column; align-items:center; gap:6px; font-size:13px; font-weight:700"><span style="width:10px; height:10px; border-radius:50%; background:#2f7d3a"></span>Facebook</a>
+            </div>
+            <a href="#" style="background:#17161c; color:#fff; border-radius:999px; min-height:50px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:15px">Espace membres</a>
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; font-size:12.5px; padding-top:14px; border-top:1px solid rgba(23,22,28,0.2)">
+              <span>18240 Léré</span>
+              <a href="#" style="font-weight:700; text-decoration:underline; text-underline-offset:3px; min-height:32px; display:flex; align-items:center">Espace admin</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+</x-dc>
+</body>
+</html>

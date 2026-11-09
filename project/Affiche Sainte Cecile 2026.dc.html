@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&amp;family=DM+Sans:opsz,wght@9..40,300..800&amp;family=JetBrains+Mono:wght@400..700&amp;display=swap" rel="stylesheet">
+<script src="./doc-page.js"></script>
+<style>
+  body { margin:0; color:#17161c; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:#17161c; text-decoration:none; }
+  a:hover { color:#e3106e; }
+  doc-page:not(:defined) { visibility:hidden; }
+  img { display:block; }
+</style>
+</helmet>
+<doc-page size="a4">
+  <section class="page" data-screen-label="Affiche Sainte Cécile 2026">
+    <div style="height:100%; box-sizing:border-box; display:flex; flex-direction:column; background:#000000; color:#fff">
+      <div style="position:relative; flex:0 0 44%; overflow:hidden">
+        <img src="assets/flutiste-concert.webp" alt="Flûtiste de l'harmonie en concert, le chef dirigeant en arrière-plan" style="width:100%; height:100%; object-fit:cover; object-position:50% 40%">
+        <div style="position:absolute; top:10mm; left:15mm; display:flex; align-items:center; gap:4mm; background:#fff; color:#17161c; border-radius:999px; padding:2mm 6mm 2mm 2mm">
+          <div style="width:12mm; height:12mm; display:flex; align-items:center; justify-content:center"><img src="assets/logo-lyre.png" alt="" style="width:10mm; height:10mm; object-fit:contain"></div>
+          <div style="font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:14pt; white-space:nowrap">La Lyre Léréenne</div>
+        </div>
+      </div>
+      <div style="flex:1; padding:10mm 15mm 0; display:flex; flex-direction:column; gap:6mm">
+        <div style="font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:20pt; line-height:1; letter-spacing:0.02em; color:#e3106e">L'HARMONIE DE LA LYRE LÉRÉENNE<span style="display:block; margin-top:2mm; font-size:13pt; letter-spacing:0.01em; color:#7fd1cd">avec la participation de la Chorale Lérézonances</span></div>
+        <div style="font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:46pt; line-height:0.92; letter-spacing:-0.035em; text-wrap:balance">Messe de la Sainte Cécile et de la Sainte Barbe</div>
+        <div style="display:grid; grid-template-columns:auto minmax(0,1fr); gap:7mm; align-items:stretch; margin-top:2mm">
+          <div style="background:#e3106e; color:#fff; border-radius:5mm; padding:4mm 6mm; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1mm">
+            <div style="font-family:'JetBrains Mono',monospace; font-size:10pt; letter-spacing:0.14em">SAMEDI</div>
+            <div style="font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:54pt; line-height:0.9">5</div>
+            <div style="font-family:'JetBrains Mono',monospace; font-size:10pt; letter-spacing:0.14em">DÉC. 2026</div>
+          </div>
+          <div style="display:grid; grid-template-columns:minmax(0,1fr) 60mm; gap:5mm; align-items:center; border-top:0.5mm solid #fff; border-bottom:0.5mm solid #fff; padding:4mm 0">
+          <div style="display:flex; flex-direction:column; justify-content:center; gap:3mm; min-width:0">
+            <div style="font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:30pt; line-height:1">17 h 30</div>
+            <div style="font-family:'Bricolage Grotesque',sans-serif; font-weight:700; font-size:20pt; line-height:1.1">Collégiale St Martin, Léré</div>
+            <div style="font-size:12pt; line-height:1.4">Direction : Sébastien Ledoux</div>
+          </div>
+          <img src="assets/collegiale-nuit.webp" alt="La collégiale de Léré illuminée de nuit" style="width:52mm; height:39mm; flex:none; justify-self:start; object-fit:cover; object-position:65% 50%; border-radius:2mm">
+          </div>
+        </div>
+      </div>
+      <div style="padding:6mm 15mm 6mm; display:flex; align-items:flex-end; justify-content:space-between; gap:8mm">
+        <div style="display:flex; flex-direction:column; gap:3mm; align-items:flex-start">
+        </div>
+      </div>
+      <div style="background:#fff; color:#17161c; border-top:0.3mm solid #d8d6dc; padding:3mm 15mm; display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:6mm">
+        <div style="display:flex; align-items:center; gap:3mm; justify-self:start">
+          <img src="assets/blason-lere.webp" alt="Blason de la Commune de Léré" style="width:14mm; height:14mm; object-fit:contain">
+          <div style="font-family:'Bricolage Grotesque',sans-serif; font-weight:700; font-size:13pt; white-space:nowrap">Commune de Léré</div>
+        </div>
+        <img src="assets/logo-cher.webp" alt="Cher, Département 18" style="height:16mm; width:auto; display:block; justify-self:center">
+        <div style="display:flex; align-items:center; gap:4mm; justify-self:end">
+          <div style="font-family:'Bricolage Grotesque',sans-serif; font-weight:700; font-size:14pt; white-space:nowrap">lalyrelereenne.fr</div>
+          <div style="background:#fff; border:0.4mm solid #17161c; border-radius:3mm; padding:2mm">{{ qrImg }}</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</doc-page>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  componentDidMount() {
+    const kick = () => { const d = document.querySelector('doc-page'); if (d) { d.setAttribute('data-ready', String(Date.now())); if (d._measure && d._sheet) { d._raf = null; d._measure(); } } };
+    [50, 300, 1000].forEach(t => setTimeout(kick, t));
+  }
+  renderVals() {
+    return {
+      qrImg: React.createElement('img', { src: 'https://api.qrserver.com/v1/create-qr-code/?size=600x600&margin=0&data=' + encodeURIComponent('https://www.lalyrelereenne.fr/'), alt: 'QR code vers le site', style: { width: '18mm', height: '18mm', display: 'block' } })
+    };
+  }
+}
+</script>
+</body>
+</html>
