@@ -41,8 +41,20 @@ Enregistrement des données sur le serveur (pas de base de données à créer)
 - Les membres, élèves, professeurs, cotisations, la comptabilité et les e-mails
   ne sont lisibles qu'avec le code du serveur.
 - Le serveur garde les 30 dernières versions dans donnees-lyre/sauvegardes/.
-- Si deux personnes modifient en même temps, la dernière enregistrée l'emporte :
-  cliquez sur « Recharger » avant une grosse saisie.
+- Si deux personnes modifient en même temps, les deux saisies sont fusionnées :
+  rien ne s'efface. Si elles changent exactement la même chose, la dernière l'emporte.
+- Si l'envoi échoue (connexion coupée), la saisie reste dans le navigateur et repart
+  automatiquement, y compris après la fermeture et la réouverture de la page.
+- L'espace membres (documents, partitions, sondages), les comptes du bureau et le
+  journal des connexions sont aussi enregistrés sur le serveur.
+- Espace membres : les membres se connectent depuis n'importe quel appareil. Leurs
+  réponses aux sondages, covoiturages, photos, mots de passe et modifications de
+  profil sont enregistrés directement sur le serveur (mots de passe chiffrés).
+  Il devient disponible après la première ouverture de l'administration avec le
+  code du serveur (c'est à ce moment que la liste des membres y est envoyée).
+- Les fiches d'inscription remplies par les visiteurs sont aussi gardées sur le
+  serveur : un bandeau vert de l'administration les liste et permet de les
+  télécharger en tableur.
 
 Envoi direct des e-mails
 ------------------------

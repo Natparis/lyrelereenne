@@ -1711,6 +1711,26 @@
               <a href="#" onClick="{{ srvLogout }}" style="border:1.5px solid #17161c; padding:8px 14px; border-radius:999px; font-size:13px; font-weight:700; white-space:nowrap; color:#17161c">Oublier le code</a>
             </sc-if>
           </div>
+          <sc-if value="{{ inscrHas }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-bottom:16px; background:#eef5e6; border:1px solid #cfe3bf; border-radius:12px; padding:12px 16px; display:flex; flex-direction:column; gap:10px">
+              <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap">
+                <span style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.1em; color:#2f5a1f">FICHES D'INSCRIPTION</span>
+                <span style="flex:1 1 220px; font-size:14px; font-weight:600; color:#2f5a1f">{{ inscrTitle }}</span>
+                <a href="#" onClick="{{ inscrCsv }}" style="background:#2f7d3a; color:#fff; padding:8px 14px; border-radius:999px; font-size:13px; font-weight:700; white-space:nowrap">Télécharger (tableur)</a>
+                <a href="#" onClick="{{ inscrToggle }}" style="border:1.5px solid #2f5a1f; color:#2f5a1f; padding:7px 14px; border-radius:999px; font-size:13px; font-weight:700; white-space:nowrap">{{ inscrToggleLabel }}</a>
+              </div>
+              <sc-if value="{{ inscrOpen }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex; flex-direction:column; gap:6px">
+                  <sc-for list="{{ inscrRows }}" as="r" hint-placeholder-count="3">
+                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; background:#fff; border-radius:8px; padding:8px 12px; font-size:13.5px">
+                      <span style="font-weight:700; flex:1 1 200px">{{ r.name }}</span><span style="color:#5c5a64">{{ r.when }}</span>
+                      <a href="#" onClick="{{ r.del }}" style="color:#8f1d2c; font-size:12.5px; font-weight:700; text-decoration:underline">Retirer</a>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
           <sc-if value="{{ hasSaveErr }}" hint-placeholder-val="{{ false }}">
             <div style="margin-bottom:16px; background:#fbe9eb; color:#8f1d2c; border-radius:12px; padding:12px 16px; font-size:14px; font-weight:600">{{ saveErr }}</div>
           </sc-if>
@@ -3550,7 +3570,7 @@ const copySignature = () => new Promise((resolve) => {
   img.src = 'assets/logo-lyre.webp';
 });
 const SRV_PRIV_TABLES = ['eleves', 'chorale', 'harmonie', 'profs', 'cotisations', 'membres', 'documents', 'droits', 'espace', 'instruments'];
-const SRV_PRIV_KEYS = ['ecExtra', 'ecEdits', 'remises', 'cotMeta', 'avEdits', 'anNouveau', 'chargesAP', 'posteExtra', 'virements', 'mailLog', 'mailCfg', 'autoSent'];
+const SRV_PRIV_KEYS = ['esp', 'accounts', 'connLog', 'memDir', 'ecExtra', 'ecEdits', 'remises', 'cotMeta', 'avEdits', 'anNouveau', 'chargesAP', 'posteExtra', 'virements', 'mailLog', 'mailCfg', 'autoSent'];
 const SRV_BY_TABLE = ['tableEdits', 'tableExtra', 'removed'];
 const srvCode = () => { try { return localStorage.getItem('lyre-code-serveur') || ''; } catch (e) { return ''; } };
 const srvSetCode = (v) => { try { if (v) localStorage.setItem('lyre-code-serveur', v); else localStorage.removeItem('lyre-code-serveur'); } catch (e) {} };
@@ -3563,8 +3583,73 @@ const srvSplit = (out) => { const pub = {}, priv = {};
 const srvMerge = (cur, part, isPriv) => { const o = {}; Object.keys(part || {}).forEach(k => { const v = part[k];
     if (SRV_BY_TABLE.indexOf(k) > -1 && v && typeof v === 'object' && !Array.isArray(v)) { const base = { ...((cur && cur[k]) || {}) }; Object.keys(base).forEach(t => { if ((SRV_PRIV_TABLES.indexOf(t) > -1) === !!isPriv) delete base[t]; }); o[k] = { ...base, ...v }; }
     else o[k] = v; }); return o; };
-const srvGet = (part, code) => fetch('donnees.php?part=' + part + '&t=' + Date.now(), { headers: code ? { 'X-Code': code } : {}, cache: 'no-store' }).then(r => r.json().then(j => ({ status: r.status, ...j }), () => ({ status: r.status, ok: false, error: 'Réponse illisible (code ' + r.status + ')' })));
-const srvPut = (part, data, code) => fetch('donnees.php?part=' + part, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Code': code }, body: JSON.stringify({ data }) }).then(r => r.json().then(j => ({ status: r.status, ...j }), () => ({ status: r.status, ok: false, error: 'Réponse illisible (code ' + r.status + ')' })));
+const srvHdr = (code, mem) => { const h = {}; if (code) h['X-Code'] = encodeURIComponent(code); if (mem && mem.id) { h['X-Membre'] = encodeURIComponent(mem.id); if (mem.code) h['X-Code-Membre'] = encodeURIComponent(mem.code); } return h; };
+const srvJson = (r) => r.json().then(j => ({ status: r.status, ...j }), () => ({ status: r.status, ok: false, error: 'Réponse illisible (code ' + r.status + ')' }));
+const srvGet = (part, code, mem) => fetch('donnees.php?part=' + part + '&t=' + Date.now(), { headers: srvHdr(code, mem), cache: 'no-store' }).then(srvJson);
+const srvPost = (part, body, code, mem) => fetch('donnees.php?part=' + part, { method: 'POST', headers: { 'Content-Type': 'application/json', ...srvHdr(code, mem) }, body: JSON.stringify(body) }).then(srvJson);
+const srvPut = (part, data, code, base) => srvPost(part, base == null ? { data } : { data, base }, code);
+const memCreds = () => { try { const id = sessionStorage.getItem('lyre-membre'); return id ? { id, code: sessionStorage.getItem('lyre-membre-code') || '' } : null; } catch (e) { return null; } };
+// Comparaison stable (ordre des clés indifférent).
+const stableJ = (v) => JSON.stringify(v, (k, x) => (x && typeof x === 'object' && !Array.isArray(x)) ? Object.keys(x).sort().reduce((o, kk) => { o[kk] = x[kk]; return o; }, {}) : x);
+// Fusion à trois voies : base = dernière version connue du serveur, l = ce navigateur, sr = serveur actuel.
+// Ce qui n'a changé que d'un côté est gardé ; si les deux ont changé la même chose, la saisie de ce navigateur l'emporte.
+const merge3 = (b, l, sr) => {
+  const eq = (x, y) => stableJ(x) === stableJ(y);
+  if (eq(l, b)) return sr; if (eq(sr, b) || eq(l, sr)) return l;
+  const isO = (x) => x && typeof x === 'object' && !Array.isArray(x);
+  if (isO(l) && isO(sr)) { const bb = isO(b) ? b : {}, o = {}; Array.from(new Set(Object.keys(bb).concat(Object.keys(l), Object.keys(sr)))).forEach(k => { const r = merge3(bb[k], l[k], sr[k]); if (r !== undefined) o[k] = r; }); return o; }
+  if (Array.isArray(l) && Array.isArray(sr)) {
+    const ba = Array.isArray(b) ? b : [];
+    const withId = (a) => a.every(x => isO(x) && x.id != null);
+    if (withId(l) && withId(sr) && withId(ba)) {
+      const map = (a) => { const m = {}; a.forEach(x => { m[String(x.id)] = x; }); return m; };
+      const B = map(ba), L = map(l), S = map(sr), out = [];
+      sr.forEach(x => { const k = String(x.id); if (!(k in L) && !(k in B)) out.push(x); });
+      l.forEach(x => { const k = String(x.id); const r = merge3(B[k], x, S[k]); if (r !== undefined) out.push(r); });
+      return out;
+    }
+    const prim = (a) => a.every(x => x === null || typeof x !== 'object');
+    if (prim(l) && prim(sr) && prim(ba)) {
+      if (l.length === sr.length && l.length === ba.length) return l.map((x, i) => merge3(ba[i], x, sr[i]));
+      const kb = ba.map(String), kl = l.map(String), ks = sr.map(String);
+      return l.concat(sr.filter(x => kl.indexOf(String(x)) === -1 && kb.indexOf(String(x)) === -1)).filter(x => !(kb.indexOf(String(x)) > -1 && (kl.indexOf(String(x)) === -1 || ks.indexOf(String(x)) === -1)));
+    }
+  }
+  return l;
+};
+const rowsOfSt = (st, k) => {
+  const p = PANELS[k], ed = (st.tableEdits || {})[k] || {}, ex = (st.tableExtra || {})[k] || [], rm = st.removed || {};
+  return p.rows.map((r, i) => ({ id: i, cells: r })).concat(Array.isArray(ex) ? ex : [])
+    .filter(r => (rm[k] || []).indexOf(r.id) === -1)
+    .map(r => { const a = ed[r.id] || r.cells; return { id: r.id, cells: withAge(p.columns, p.columns.map((c, j) => (a && a[j] != null) ? String(a[j]) : '')) }; });
+};
+const splitVs = (v) => String(v || '').split(/\s*,\s*/).filter(Boolean);
+const nzEs = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+const membersOfSt = (st) => {
+  const mc = PANELS.membres.columns, mi = (n) => mc.indexOf(n);
+  const members = rowsOfSt(st, 'membres').map(r => {
+    const c = r.cells, prenom = c[mi('PRÉNOM')].trim(), nom = c[mi('NOM')].trim();
+    return { id: String(r.id), rawId: r.id, cells: c, prenom, nom, name: (prenom + ' ' + nom).trim() || 'Sans nom', tel: c[mi('TÉLÉPHONE')], email: c[mi('EMAIL')], ens: splitVs(c[mi('ENSEMBLES')]), pup: splitVs(c[mi('PUPITRES / INSTRUMENTS')]), statut: c[mi('STATUT')], depuis: c[mi('DEPUIS')] };
+  }).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+  const idx = {}; members.forEach(x => { idx[nzEs(x.name)] = x; });
+  [['eleves', 'École de musique', 'INSTRUMENT'], ['chorale', 'Chorale', 'VOIX'], ['harmonie', 'Orchestre', 'PUPITRE']].forEach(([k, ens, col]) => {
+    const pc = PANELS[k].columns;
+    rowsOfSt(st, k).forEach(r => { const x = idx[nzEs(r.cells[pc.indexOf('PRÉNOM')] + ' ' + r.cells[pc.indexOf('NOM')])]; if (!x) return;
+      x.byEns = x.byEns || {};
+      if (x.ens.indexOf(ens) === -1) x.ens = x.ens.concat([ens]);
+      const v = splitVs(r.cells[pc.indexOf(col)]); x.byEns[ens] = (x.byEns[ens] || []).concat(v);
+      v.forEach(pp => { if (x.pup.indexOf(pp) === -1) x.pup = x.pup.concat([pp]); }); }); });
+  return members;
+};
+// Annuaire envoyé au serveur pour l'espace membres (chaque membre ne reçoit que sa propre fiche).
+const memDirOf = (st) => { const cc = PANELS.cotisations.columns, cot = rowsOfSt(st, 'cotisations');
+  return membersOfSt(st).map(m => ({ ...m, cot: cot.filter(r => nzEs(r.cells[cc.indexOf('MEMBRE')]) === nzEs(m.name)).map(r => r.cells) })); };
+// Applique au membre la fiche « Mon profil » qu'il a modifiée, en attendant que le bureau la reporte.
+const profOverlay = (m, pr) => { if (!m || !pr || !Array.isArray(pr.cells)) return m; const mc = PANELS.membres.columns, c = pr.cells, mi = (n) => mc.indexOf(n);
+  const extraE = Object.keys(m.byEns || {}), extraP = [].concat(...Object.values(m.byEns || {}));
+  const ens = splitVs(c[mi('ENSEMBLES')]); extraE.forEach(e => { if (ens.indexOf(e) === -1) ens.push(e); });
+  const pup = splitVs(c[mi('PUPITRES / INSTRUMENTS')]); extraP.forEach(e => { if (pup.indexOf(e) === -1) pup.push(e); });
+  return { ...m, cells: c.slice(), tel: c[mi('TÉLÉPHONE')], email: c[mi('EMAIL')], ens, pup }; };
 let MAIL_CFG = {};
 const MAIL_DEF = { mode: 'messagerie', fromName: 'La Lyre Léréenne', fromEmail: '', replyTo: '', sigLine: 'École de musique · Orchestre · Chorale — Léré', endpoint: 'envoi-mail.php', code: '',
   autoRelance: false, relanceDays: '30', relanceSubj: 'Rappel : votre cotisation {saison}',
@@ -3767,7 +3852,7 @@ const ESP_DEFAULT = {
   ]
 };
 const loadEsp = () => { try { const v = JSON.parse(localStorage.getItem('lyre-espace')); if (v && Array.isArray(v.items)) return { ...v, items: v.items.filter(i => !(i.id === 'a2' && i.title === 'Covoiturage pour Assigny')) }; } catch (e) {} return ESP_DEFAULT; };
-const storeEsp = (v) => { try { localStorage.setItem('lyre-espace', JSON.stringify(v)); return true; } catch (e) { console.warn('Espace membres non enregistré : ' + String(e && e.message || e)); return false; } };
+const storeEsp = (v) => { try { localStorage.removeItem('lyre-espace'); } catch (e) {} return true; };
 const COVOIT_DEFAULT = [
   { id: 'cv1', type: 'offre', authorId: 'demo1', author: 'Didier Tirfoin', tel: '0612345678', ev: 'Concert Ennio Morricone · 10 OCT 2026', from: 'Belleville-sur-Loire', date: '2026-10-10', time: '14 h 45', seats: 3, note: 'Coffre libre pour un gros instrument.', takers: [] },
   { id: 'cv2', type: 'recherche', authorId: 'demo2', author: 'Patricia Tirfoin', tel: '0698765432', ev: 'Répétition chorale (vendredi soir)', from: 'Sury-près-Léré', date: '2026-10-16', time: '19 h 30', seats: 1, note: '', takers: [] }
@@ -3777,7 +3862,7 @@ const SOND_KINDS = { 'Concert': 'background:#ffe14d; color:#17161c', 'Repas': 'b
 const sondKind = (it) => it.kind && SOND_KINDS[it.kind] ? it.kind : (/repas|banquet|d[ée]jeuner|d[îi]ner|galette|pique/i.test(it.title || '') ? 'Repas' : /f[êe]te|soir[ée]e|bal\b/i.test(it.title || '') ? 'Fête' : 'Concert');
 const VOTE_STYLE = { 'Présent': 'background:#e7f0c9; color:#2f5a1f', 'Peut-être': 'background:#ffe9a8; color:#6b5200', 'Absent': 'background:#f7dde0; color:#8f1d2c' };
 
-const PERSIST_KEYS = ['migReduit', 'removed', 'newsEdits', 'newsExtra', 'evEdits', 'evExtra', 'ecExtra', 'ecEdits', 'remises', 'tableEdits', 'tableExtra', 'catExtra', 'galExtra', 'albumsExtra', 'instrExtra', 'tarifs', 'pupExtra', 'mailLog', 'cotMeta', 'avEdits', 'anNouveau', 'chargesAP', 'posteExtra', 'virements', 'mailCfg', 'autoSent'];
+const PERSIST_KEYS = ['esp', 'accounts', 'connLog', 'migReduit', 'removed', 'newsEdits', 'newsExtra', 'evEdits', 'evExtra', 'ecExtra', 'ecEdits', 'remises', 'tableEdits', 'tableExtra', 'catExtra', 'galExtra', 'albumsExtra', 'instrExtra', 'tarifs', 'pupExtra', 'mailLog', 'cotMeta', 'avEdits', 'anNouveau', 'chargesAP', 'posteExtra', 'virements', 'mailCfg', 'autoSent'];
 const fmtNaiss = (v) => { let s = String(v || '').trim(); if (!s) return ''; { const g = s.replace(/[\/.\-\s]/g, ''); if (/^\d{8}$/.test(g) && !/^(19|20)\d{6}$/.test(g) && !/^\d{5}$/.test(s)) s = g.slice(0, 2) + '/' + g.slice(2, 4) + '/' + g.slice(4); } let d, m, y, x;
   if ((x = s.match(/^(\d{1,2})[\/.\-\s](\d{1,2})[\/.\-\s](\d{2,4})$/))) { d = +x[1]; m = +x[2]; y = +x[3]; if (y < 100) y += y > (new Date().getFullYear() % 100) ? 1900 : 2000; if (m > 12 && d <= 12) { const t = d; d = m; m = t; } }
   else if ((x = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) { y = +x[1]; m = +x[2]; d = +x[3]; }
@@ -4129,39 +4214,111 @@ class Component extends DCLogic {
 
   componentWillMount() { try { const cv = JSON.parse(localStorage.getItem('lyre-covoit') || 'null'); if (Array.isArray(cv)) this.state.covoit = cv; } catch (e) {} try { const p = JSON.parse(localStorage.getItem('lyre-memPhotos') || '{}'); if (p && typeof p === 'object') this.state.memPhotos = p; } catch (e) {} }
 
-  srvPush(out) {
-    if (!this._srvLoaded || !srvOn() || this.state.apercuAdmin || this.state.apercu) return;
-    const code = srvCode(); if (!code) return;
-    clearTimeout(this._srvT);
-    this._srvT = setTimeout(() => { const sp = srvSplit(out), jp = JSON.stringify(sp.pub), jv = JSON.stringify(sp.priv), jobs = [];
-      if (jp !== this._srvLastPub) jobs.push(srvPut('public', sp.pub, code).then(r => { if (r.ok) this._srvLastPub = jp; return r; }));
-      if (jv !== this._srvLastPriv) jobs.push(srvPut('prive', sp.priv, code).then(r => { if (r.ok) this._srvLastPriv = jv; return r; }));
-      if (!jobs.length) return;
-      this.setState({ srvMsg: 'Enregistrement sur le serveur…', srvErr: false });
-      Promise.all(jobs).then(rs => { const bad = rs.find(r => !r.ok); this.setState(bad ? { srvMsg: "⚠ Enregistrement sur le serveur impossible : " + (bad.error || 'erreur') + ". Vos modifications restent gardées dans ce navigateur.", srvErr: true } : { srvMsg: 'Enregistré sur le serveur OVH à ' + new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }), srvErr: false }); })
-        .catch(() => this.setState({ srvMsg: "⚠ Serveur injoignable : vos modifications restent gardées dans ce navigateur et partiront à la prochaine modification.", srvErr: true }));
-    }, 1200);
+  persistOut() { const o = {}; PERSIST_KEYS.forEach(k => { o[k] = this.state[k]; }); return o; }
+  // Données envoyées au serveur : celles du navigateur + l'annuaire de l'espace membres.
+  srvOut() { const o = this.persistOut(); try { o.memDir = memDirOf(this.state); } catch (e) {} return srvSplit(o); }
+  srvApply(data, isPriv) {
+    const m = srvMerge(this.persistOut(), data || {}, isPriv); const patch = {};
+    Object.keys(m).forEach(k => { if (PERSIST_KEYS.indexOf(k) > -1 && m[k] != null) patch[k] = m[k]; });
+    if (Object.keys(patch).length) this.setState(patch);
   }
+  srvSaveBase() { idbSet('lyre-srv-base', this._base || null).catch(() => {}); }
+
+  srvPush() {
+    if (!this._srvLoaded || !srvOn() || this.state.apercuAdmin || this.state.apercu || !srvCode()) return;
+    this._srvPending = true;
+    clearTimeout(this._srvT);
+    this._srvT = setTimeout(() => this.srvFlush(), 1200);
+  }
+  srvFlush() {
+    clearTimeout(this._srvT);
+    const code = srvCode();
+    if (!code || !this._srvLoaded || !srvOn()) return Promise.resolve();
+    if (this._srvBusy) { this._srvAgain = true; return this._srvBusy; }
+    const sp = this.srvOut(), B = this._base || (this._base = {}), jobs = [];
+    let merged = false;
+    [['pub', 'public', false], ['priv', 'prive', true]].forEach(([k, part, isPriv]) => {
+      const data = sp[k], base = B[k] || { v: '', data: {} };
+      if (stableJ(data) === stableJ(base.data)) return;
+      jobs.push(srvPut(part, data, code, base.v).then(r => {
+        if (r.ok) { B[k] = { v: r.v, data }; return r; }
+        if (r.conflict) { // quelqu'un a enregistré entre-temps : on fusionne et on renvoie
+          const mg = merge3(base.data, data, r.data || {}); B[k] = { v: r.v, data: r.data || {} }; this.srvApply(mg, isPriv); merged = true; this._srvAgain = true; return { ok: true }; }
+        return r; }));
+    });
+    if (!jobs.length) { this._srvPending = false; this.srvAck(); return Promise.resolve(); }
+    this.setState({ srvMsg: 'Enregistrement sur le serveur…', srvErr: false });
+    this._srvBusy = Promise.all(jobs).then(rs => {
+      this._srvBusy = null; this.srvSaveBase();
+      const bad = rs.find(r => !r.ok);
+      if (bad) { this._srvPending = true; this.setState({ srvMsg: "⚠ Enregistrement sur le serveur impossible : " + (bad.error || 'erreur') + ". Vos modifications restent gardées dans ce navigateur et repartiront automatiquement.", srvErr: true }); this._srvT = setTimeout(() => this.srvFlush(), 30000); return; }
+      if (this._srvAgain) { this._srvAgain = false; this.setState({ srvMsg: merged ? "Modifications faites par une autre personne intégrées, enregistrement…" : 'Enregistrement sur le serveur…', srvErr: false }); return this.srvFlush(); }
+      this._srvPending = false; this.srvAck();
+      this.setState({ srvMsg: 'Enregistré sur le serveur OVH à ' + new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }), srvErr: false });
+    }).catch(() => { this._srvBusy = null; this._srvPending = true; this.setState({ srvMsg: "⚠ Serveur injoignable : vos modifications restent gardées dans ce navigateur et repartiront automatiquement.", srvErr: true }); this._srvT = setTimeout(() => this.srvFlush(), 30000); });
+    return this._srvBusy;
+  }
+  // Profils modifiés par les membres : une fois reportés et enregistrés par le bureau, on les retire de la file.
+  srvAck() { const ids = this._profAck; if (!ids || !Object.keys(ids).length) return; this._profAck = null; srvPost('membres', { op: 'prof-ack', ids }, srvCode()).then(r => { if (r.ok) this.setState({ memData: r.data }); }).catch(() => {}); }
 
   srvLoad(code) {
     if (!srvOn()) { this.setState({ srvMsg: "Aperçu : l'enregistrement sur le serveur fonctionnera une fois le site en ligne sur OVH.", srvErr: false }); return Promise.resolve(false); }
-    const curOut = () => { const o = {}; PERSIST_KEYS.forEach(k => { o[k] = this.state[k]; }); return o; };
-    return srvGet('public').then(rp => {
-      if (rp.ok && rp.data && Object.keys(rp.data).length) { const m = srvMerge(curOut(), rp.data, false); const patch = {}; Object.keys(m).forEach(k => { if (PERSIST_KEYS.indexOf(k) > -1 && m[k] != null) patch[k] = m[k]; }); this.setState(patch); }
-      if (!code) return false;
+    const getBase = () => this._base ? Promise.resolve(this._base) : idbGet('lyre-srv-base').then(v => (v && typeof v === 'object') ? v : {}).catch(() => ({}));
+    return getBase().then(B => srvGet('public').then(rp => {
+      // Sans code : simple lecture des données publiques (visiteurs).
+      if (!code) { if (rp.ok && rp.data && Object.keys(rp.data).length) this.srvApply(rp.data, false); this.memRefresh(); return false; }
       return srvGet('prive', code).then(rv => {
         if (rv.status === 401 || rv.status === 403) { this.setState({ srvMsg: '⚠ Code du serveur incorrect.', srvErr: true }); return false; }
-        if (!rv.ok) { this.setState({ srvMsg: '⚠ ' + (rv.error || 'Serveur indisponible'), srvErr: true }); return false; }
-        const emptyServer = !(rv.data && Object.keys(rv.data).length) && !(rp.data && Object.keys(rp.data).length);
-        if (!emptyServer) { const m = srvMerge(curOut(), rv.data || {}, true); const patch = {}; Object.keys(m).forEach(k => { if (PERSIST_KEYS.indexOf(k) > -1 && m[k] != null) patch[k] = m[k]; });
-          if (patch.tableEdits && this.state.tableEdits) { const pubPart = srvSplit({ tableEdits: this.state.tableEdits }).pub.tableEdits; patch.tableEdits = { ...pubPart, ...patch.tableEdits }; }
-          this.setState(patch); }
-        this._srvLoaded = true; this._srvLastPub = emptyServer ? '' : JSON.stringify(srvSplit(curOut()).pub); this._srvLastPriv = emptyServer ? '' : null;
-        this.setState({ srvMsg: emptyServer ? 'Serveur vide : envoi des données de ce navigateur vers le serveur…' : 'Connecté au serveur OVH : données à jour (' + (rv.at ? new Date(rv.at * 1000).toLocaleString('fr-FR') : 'aucune date') + ').', srvErr: false, srvOk: true });
-        setTimeout(() => this.srvPush(curOut()), 300);
+        if (!rv.ok || !rp.ok) { this.setState({ srvMsg: '⚠ ' + (rv.error || rp.error || 'Serveur indisponible'), srvErr: true }); return false; }
+        const sv = { pub: rp.data || {}, priv: rv.data || {} };
+        const emptyServer = !Object.keys(sv.pub).length && !Object.keys(sv.priv).length;
+        const loc = this.srvOut(); let merged = false;
+        if (!emptyServer) [['pub', false], ['priv', true]].forEach(([k, isPriv]) => {
+          const base = B[k];
+          // Saisies de ce navigateur pas encore parties sur le serveur : on les fusionne au lieu de les écraser.
+          if (base && base.data && stableJ(loc[k]) !== stableJ(base.data)) { const mg = merge3(base.data, loc[k], sv[k]); merged = merged || stableJ(mg) !== stableJ(sv[k]); this.srvApply(mg, isPriv); }
+          else this.srvApply(sv[k], isPriv);
+        });
+        this._base = { pub: { v: rp.v || '', data: sv.pub }, priv: { v: rv.v || '', data: sv.priv } }; this.srvSaveBase();
+        this._srvLoaded = true;
+        this.setState({ srvMsg: emptyServer ? 'Serveur vide : envoi des données de ce navigateur vers le serveur…' : merged ? 'Connecté au serveur OVH : des saisies faites ici et pas encore envoyées ont été retrouvées, envoi en cours…' : 'Connecté au serveur OVH : données à jour (' + (rv.at ? new Date(rv.at * 1000).toLocaleString('fr-FR') : 'aucune date') + ').', srvErr: false, srvOk: true });
+        setTimeout(() => this.srvPush(), 300);
+        this.memRefresh(); this.inscrLoad();
         return true; });
-    }).catch(() => { this.setState({ srvMsg: "⚠ Serveur injoignable : le fichier donnees.php est-il bien installé sur OVH ?", srvErr: true }); return false; });
+    })).catch(() => { this.setState({ srvMsg: "⚠ Serveur injoignable : le fichier donnees.php est-il bien installé sur OVH ?", srvErr: true }); return false; });
   }
+
+  // ---- Espace membres : saisies enregistrées directement sur le serveur
+  memAuth() { const c = memCreds(), id = this.state.memId ? String(this.state.memId) : (c ? c.id : ''); return { code: this._srvLoaded ? srvCode() : '', mem: id ? { id, code: c && c.id === id ? c.code : '' } : null }; }
+  memRefresh() {
+    if (!srvOn()) return Promise.resolve();
+    const a = this.memAuth();
+    if (!a.code && !(a.mem && a.mem.code)) return Promise.resolve();
+    return srvGet('membres', a.code, a.mem).then(r => {
+      if (r.ok) return this.memApply(r);
+      if (!a.code && r.status === 401) { try { sessionStorage.removeItem('lyre-membre'); sessionStorage.removeItem('lyre-membre-code'); } catch (e) {} this.setState({ memId: null, memRemote: null, ...(this.state.view === 'membres' ? { view: 'site', page: 'accueil' } : {}) }); }
+    }).catch(() => {});
+  }
+  memApply(r) {
+    const patch = { memData: r.data || {} };
+    if (r.me || r.esp) patch.memRemote = { esp: r.esp || null, me: r.me || null };
+    this.setState(patch);
+    if (this._srvLoaded) { // le bureau reporte dans la liste des membres les profils modifiés par les membres
+      const prof = (r.data || {}).prof || {}, ids = Object.keys(prof); if (!ids.length) return;
+      const mems = membersOfSt(this.state), te = this.state.tableEdits || {}, mm = { ...(te.membres || {}) }, ack = {};
+      ids.forEach(id => { const x = mems.find(y => y.id === id); if (x && Array.isArray(prof[id].cells)) { mm[x.rawId] = prof[id].cells; } ack[id] = prof[id].at; });
+      this._profAck = { ...(this._profAck || {}), ...ack };
+      this.setState({ tableEdits: { ...te, membres: mm } });
+    }
+  }
+  memOp(body) {
+    const a = this.memAuth();
+    return srvPost('membres', body, a.code, a.mem).then(r => {
+      if (r.ok) { this.memApply(r); return true; }
+      this.setState({ mToast: '⚠ ' + (r.error || 'Enregistrement impossible') + ' Votre saisie n’a pas été enregistrée, réessayez.' }); return false;
+    }).catch(() => { this.setState({ mToast: '⚠ Serveur injoignable : votre saisie n’a pas été enregistrée. Vérifiez la connexion internet et réessayez.' }); return false; });
+  }
+  inscrLoad() { if (!srvOn() || !this._srvLoaded) return; srvGet('inscriptions', srvCode()).then(r => { if (r.ok) this.setState({ inscr: r.list || [] }); }).catch(() => {}); }
 
   componentDidUpdate() {
     { const bg = this.state.view === 'admin' ? '#efe9dc' : ''; if (document.body.style.background !== bg) { document.body.style.background = bg; document.documentElement.style.background = bg; } }
@@ -4171,7 +4328,7 @@ class Component extends DCLogic {
     this._lastSnap = snap;
     const out = {};
     PERSIST_KEYS.forEach(k => { out[k] = this.state[k]; });
-    this.srvPush(out);
+    this.srvPush();
     const json = JSON.stringify(out), okSave = () => { if (this.state.saveErr && /stockage du navigateur/.test(this.state.saveErr)) this.setState({ saveErr: '' }); };
     try { localStorage.setItem('lyre-donnees', json); okSave(); }
     catch (e) {
@@ -4215,45 +4372,37 @@ class Component extends DCLogic {
     this._outside = (e) => { if (this.state.dropOpen && !(e.target.closest && e.target.closest('[data-drop]'))) this.setState({ dropOpen: null }); };
     document.addEventListener('mousedown', this._outside);
     document.addEventListener('keydown', this._key);
+    this._hide = () => { if (document.visibilityState === 'hidden' && this._srvPending) this.srvFlush(); };
+    this._unload = (e) => { if (this._srvPending || this._srvBusy) { this.srvFlush(); e.preventDefault(); e.returnValue = ''; return ''; } };
+    document.addEventListener('visibilitychange', this._hide);
+    window.addEventListener('beforeunload', this._unload);
   }
   componentWillUnmount() {
+    document.removeEventListener('visibilitychange', this._hide);
+    window.removeEventListener('beforeunload', this._unload);
     document.removeEventListener('click', this._zoom);
     document.removeEventListener('mousedown', this._outside);
     document.removeEventListener('keydown', this._key);
   }
 
   espace(st, allEvents) {
-    const esp = st.esp || ESP_DEFAULT;
+    const online = srvOn(), md = online ? (st.memData || null) : null;
+    const remote = online && !this._srvLoaded; // sans le code du bureau : l'espace membres vient entièrement du serveur
+    const espBase = remote ? { ...ESP_DEFAULT, ...((st.memRemote && st.memRemote.esp) || {}) } : (st.esp || ESP_DEFAULT);
+    const esp = md ? { ...espBase, votes: md.votes || {}, perso: md.perso || {} } : espBase;
     const items = esp.items || [], votes = esp.votes || {};
     const saveEsp = (next, extra) => {
-      if (!storeEsp(next)) { this.setState({ espErr: 'Fichier trop lourd pour être conservé dans ce prototype. Choisissez un fichier plus léger.' }); return; }
-      this.setState({ esp: next, ...(extra || {}) });
+      storeEsp(next);
+      const cur = st.esp || ESP_DEFAULT;
+      this.setState({ esp: md ? { ...next, votes: cur.votes, perso: cur.perso } : next, ...(extra || {}) });
     };
     const today = new Date().toISOString().slice(0, 10);
-    const rm = st.removed || {};
-    const splitV = (v) => String(v || '').split(/\s*,\s*/).filter(Boolean);
-    const rowsOf = (k) => {
-      const p = PANELS[k], ed = (st.tableEdits || {})[k] || {}, ex = (st.tableExtra || {})[k] || [];
-      return p.rows.map((r, i) => ({ id: i, cells: r })).concat(Array.isArray(ex) ? ex : [])
-        .filter(r => (rm[k] || []).indexOf(r.id) === -1)
-        .map(r => { const a = ed[r.id] || r.cells; return { id: r.id, cells: withAge(p.columns, p.columns.map((c, j) => (a && a[j] != null) ? String(a[j]) : '')) }; });
-    };
+    const splitV = splitVs;
+    const rowsOf = (k) => rowsOfSt(st, k);
     const mc = PANELS.membres.columns, mi = (n) => mc.indexOf(n);
-    const members = rowsOf('membres').map(r => {
-      const c = r.cells, prenom = c[mi('PRÉNOM')].trim(), nom = c[mi('NOM')].trim();
-      return { id: String(r.id), rawId: r.id, cells: c, prenom, nom, name: (prenom + ' ' + nom).trim() || 'Sans nom', tel: c[mi('TÉLÉPHONE')], email: c[mi('EMAIL')], ens: splitV(c[mi('ENSEMBLES')]), pup: splitV(c[mi('PUPITRES / INSTRUMENTS')]), statut: c[mi('STATUT')], depuis: c[mi('DEPUIS')] };
-    }).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
-    const nzE = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
-    (() => { // compléter ensembles et pupitres depuis les listes École / Chorale / Harmonie
-      const idx = {}; members.forEach(x => { idx[nzE(x.name)] = x; });
-      [['eleves', 'École de musique', 'INSTRUMENT'], ['chorale', 'Chorale', 'VOIX'], ['harmonie', 'Orchestre', 'PUPITRE']].forEach(([k, ens, col]) => {
-        const pc = PANELS[k].columns;
-        rowsOf(k).forEach(r => { const x = idx[nzE(r.cells[pc.indexOf('PRÉNOM')] + ' ' + r.cells[pc.indexOf('NOM')])]; if (!x) return;
-          x.byEns = x.byEns || {};
-          if (x.ens.indexOf(ens) === -1) x.ens = x.ens.concat([ens]);
-          const v = splitV(r.cells[pc.indexOf(col)]); x.byEns[ens] = (x.byEns[ens] || []).concat(v);
-          v.forEach(p => { if (x.pup.indexOf(p) === -1) x.pup = x.pup.concat([p]); }); }); });
-    })();
+    const members = remote ? ((st.memRemote && st.memRemote.me) ? [st.memRemote.me] : []) : membersOfSt(st);
+    const nzE = nzEs;
+    const memPh = md ? (md.photos || {}) : (st.memPhotos || {});
     const tgts = (it) => String(it.target || '').split(/\s*,\s*/).filter(x => x && x !== 'Tous');
     const pupOk = (have, want) => { const w = nzE(want); return have.some(p => { const q = nzE(p); return q === w || q.indexOf(w + ' ') === 0 || w.indexOf(q + ' ') === 0; }); };
     const sees = (m, it) => {
@@ -4283,7 +4432,7 @@ class Component extends DCLogic {
     };
 
     // ---- côté membre
-    const m = members.find(x => x.id === String(st.memId)) || (st.apercu ? members[0] : undefined);
+    const m = profOverlay(members.find(x => x.id === String(st.memId)) || (st.apercu ? members[0] : undefined), md && md.prof && md.prof[String(st.memId)]);
     const mine = m ? items.filter(it => sees(m, it)) : [];
     const tab = st.mTab || 'accueil';
     const setTab = (k) => (e) => { if (e) e.preventDefault(); this.setState({ mTab: k, mToast: '', mProf: null, profSaved: false }); window.scrollTo(0, 0); };
@@ -4293,7 +4442,7 @@ class Component extends DCLogic {
     const polls = mine.filter(it => it.type === 'sond' && (!it.date || it.date >= today)).sort(byDate);
     const myVote = (it) => m ? (votes[it.id] || {})[m.id] : '';
     const pending = polls.filter(p => !myVote(p)).length;
-    const vote = (it, v) => (e) => { if (e) e.preventDefault(); saveEsp({ ...esp, votes: { ...votes, [it.id]: { ...(votes[it.id] || {}), [m.id]: v } } }); };
+    const vote = (it, v) => (e) => { if (e) e.preventDefault(); if (online) { if (m) this.memOp({ op: 'vote', item: String(it.id), v }); return; } saveEsp({ ...esp, votes: { ...votes, [it.id]: { ...(votes[it.id] || {}), [m.id]: v } } }); };
     const repRow = (it) => { const d = dt(it.date); return { title: it.title, wd: d ? d.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '').toUpperCase() : '', day: d ? d.getDate() : '', mon: d ? d.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '').toUpperCase() : '', where: [it.time, it.place].filter(Boolean).join(' · '), who: it.concert ? 'Concert · membres' : who(it), text: it.text, hasText: !!it.text }; };
     const isAudio = (it) => it.format === 'audio' || /^(MP3|WAV|M4A|OGG|AAC|FLAC)$/i.test(it.fileType || '');
     const play = (it) => (e) => {
@@ -4309,7 +4458,7 @@ class Component extends DCLogic {
 
     const cc = PANELS.cotisations.columns, ci = (n) => cc.indexOf(n);
     const num = (s) => { const v = parseFloat(String(s || '').replace(/[^\d,.-]/g, '').replace(',', '.')); return isNaN(v) ? 0 : v; };
-    const cot = m ? rowsOf('cotisations').filter(r => norm(r.cells[ci('MEMBRE')]) === norm(m.name)) : [];
+    const cot = !m ? [] : remote ? (m.cot || []).map((cells, i) => ({ id: i, cells })) : rowsOf('cotisations').filter(r => norm(r.cells[ci('MEMBRE')]) === norm(m.name));
     const cotRows = cot.map(r => {
       const c = r.cells, du = num(c[ci('MONTANT DÛ')]), rg = num(c[ci('RÉGLÉ')]), reste = Math.max(du - rg, 0);
       const recu = (e) => {
@@ -4368,13 +4517,25 @@ class Component extends DCLogic {
       isMLogin: st.view === 'mlogin',
       isMembres: st.view === 'membres' && !!m,
       mWho: st.mWho || '', mCode: st.mCode || '', mErr: st.mErr || '', hasMErr: !!st.mErr,
-      mWhoOpts: [{ v: '', t: 'Choisissez votre nom' }].concat(members.map(x => ({ v: x.id, t: x.name }))),
+      mWhoOpts: [{ v: '', t: 'Choisissez votre nom' }].concat((remote ? (() => { if (!this._namesAsked) { this._namesAsked = true; srvGet('noms').then(r => this.setState({ memNames: (r && r.noms) || [] })).catch(() => this.setState({ memNames: [] })); } return st.memNames || []; })() : members).map(x => ({ v: x.id, t: x.name }))),
       onMWho: (e) => this.setState({ mWho: e.target.value, mErr: '' }),
       onMCode: (e) => this.setState({ mCode: e.target.value, mErr: '' }),
       mDemoCode: esp.code,
       mSubmit: (e) => {
         if (e) e.preventDefault();
-        if (!st.mWho) return this.setState({ mErr: 'Choisissez votre nom dans la liste.' });
+        if (!st.mWho) return this.setState({ mErr: remote && st.memNames && !st.memNames.length ? "L'espace membres n'est pas encore prêt : un membre du bureau doit d'abord ouvrir l'administration avec le code du serveur." : 'Choisissez votre nom dans la liste.' });
+        if (online) { // vérification par le serveur : fonctionne sur n'importe quel appareil
+          const id = String(st.mWho), code = st.mCode || '';
+          this.setState({ mErr: '' });
+          srvGet('membres', '', { id, code }).then(r => {
+            if (!r.ok) return this.setState({ mErr: r.error || 'Connexion impossible.' });
+            try { sessionStorage.setItem('lyre-membre', id); sessionStorage.setItem('lyre-membre-code', code); if (r.acct) sessionStorage.setItem('lyre-admin', r.acct); } catch (er) {}
+            const P = ((r.data || {}).perso || {})[id] || {}, first = !P.done && !r.acct, w = r.me || {};
+            this.setState({ memData: r.data || {}, memRemote: { esp: r.esp || null, me: r.me || null }, view: 'membres', memId: id, mCode: '', mErr: '', mTab: 'accueil', ...(r.acct ? { meId: r.acct } : {}), ...(first ? { mFirst: true, mfFirst: true, mfCode: '', mfCode2: '', mfEmail: w.email || '', mfErr: '' } : { mFirst: false }) });
+            window.scrollTo(0, 0);
+          }).catch(() => this.setState({ mErr: 'Serveur injoignable. Vérifiez la connexion internet et réessayez.' }));
+          return;
+        }
         const who = members.find(x => x.id === String(st.mWho));
         const acc = acctOf(who);
         const byPwd = !!acc && (st.mCode || '') === acc.pwd;
@@ -4387,10 +4548,10 @@ class Component extends DCLogic {
         this.setState({ view: 'membres', memId: st.mWho, mCode: '', mErr: '', mTab: 'accueil', ...(byPwd ? { meId: acc.id } : {}), ...(first ? { mFirst: true, mfFirst: true, mfCode: '', mfCode2: '', mfEmail: (who && who.email) || '', mfErr: '' } : { mFirst: false }) });
         window.scrollTo(0, 0);
       },
-      mLogout: (e) => { if (e) e.preventDefault(); sessionStorage.removeItem('lyre-membre'); sessionStorage.removeItem('lyre-admin'); this.setState({ view: 'site', page: 'accueil', memId: null, mWho: '', meId: null }); window.scrollTo(0, 0); },
+      mLogout: (e) => { if (e) e.preventDefault(); sessionStorage.removeItem('lyre-membre'); sessionStorage.removeItem('lyre-membre-code'); sessionStorage.removeItem('lyre-admin'); this.setState({ view: 'site', page: 'accueil', memId: null, mWho: '', meId: null, memRemote: null }); window.scrollTo(0, 0); },
       mFirst: !!(st.mFirst && m), mfIsFirst: !!st.mfFirst, mfNotFirst: !st.mfFirst, mfCommon: esp.code,
       mfCode: st.mfCode || '', mfCode2: st.mfCode2 || '', mfEmail: st.mfEmail == null ? '' : st.mfEmail, mfErr: st.mfErr || '', mfHasErr: !!st.mfErr,
-      mfHasPerso: !!(m && ((esp.perso || {})[m.id] || {}).code),
+      mfHasPerso: !!(m && (((esp.perso || {})[m.id] || {}).code || ((esp.perso || {})[m.id] || {}).hasCode)),
       onMfCode: (e) => this.setState({ mfCode: e.target.value, mfErr: '' }), onMfCode2: (e) => this.setState({ mfCode2: e.target.value, mfErr: '' }), onMfEmail: (e) => this.setState({ mfEmail: e.target.value, mfErr: '' }),
       mfOpen: (e) => { if (e) e.preventDefault(); if (!m) return; this.setState({ mFirst: true, mfFirst: false, mfCode: '', mfCode2: '', mfEmail: m.email || '', mfErr: '' }); },
       mfAsk: !st.mfNew, mfNewStep: !!st.mfNew,
@@ -4402,12 +4563,13 @@ class Component extends DCLogic {
         const c1 = String(st.mpCode || ''), c2 = String(st.mpCode2 || '');
         if (c1.length < 6) return this.setState({ mpErr: 'Le mot de passe doit comporter au moins 6 caractères.' });
         if (c1 !== c2) return this.setState({ mpErr: 'Les deux mots de passe ne sont pas identiques.' });
+        if (online) { this.memOp({ op: 'perso', code: c1 }).then(ok => { if (!ok) return; this.setState({ mpCode: '', mpCode2: '', mpErr: '', mpOk: true }); try { sessionStorage.setItem('lyre-membre-code', c1); } catch (er) {} }); return; }
         const perso = { ...(esp.perso || {}) }; perso[m.id] = { ...(perso[m.id] || {}), done: true, code: c1, setAt: new Date().toISOString() };
         saveEsp({ ...esp, perso }, { mpCode: '', mpCode2: '', mpErr: '', mpOk: true });
       },
       mfBack: (e) => { if (e) e.preventDefault(); this.setState({ mfNew: false, mfErr: '', mfCode: '', mfCode2: '' }); },
       mfClose: (e) => { if (e) e.preventDefault(); this.setState({ mFirst: false }); },
-      mfKeep: (e) => { if (e) e.preventDefault(); if (!m) return; const perso = { ...(esp.perso || {}) }; perso[m.id] = { ...(perso[m.id] || {}), done: true }; delete perso[m.id].code; saveEsp({ ...esp, perso }, { mFirst: false }); },
+      mfKeep: (e) => { if (e) e.preventDefault(); if (!m) return; if (online) { this.memOp({ op: 'perso', keep: true }).then(ok => { if (ok) this.setState({ mFirst: false }); }); return; } const perso = { ...(esp.perso || {}) }; perso[m.id] = { ...(perso[m.id] || {}), done: true }; delete perso[m.id].code; saveEsp({ ...esp, perso }, { mFirst: false }); },
       mfSave: (e) => {
         if (e) e.preventDefault(); if (!m) return;
         if (!String(st.mfCode || '')) return this.setState({ mfErr: 'Choisissez un mot de passe.' });
@@ -4417,6 +4579,13 @@ class Component extends DCLogic {
         if (em && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return this.setState({ mfErr: 'Adresse e-mail non valide.' });
         const perso = { ...(esp.perso || {}) }; perso[m.id] = { ...(perso[m.id] || {}), done: true, ...(c1 ? { code: c1, setAt: new Date().toISOString() } : {}) };
         const extra = { mFirst: false, mfNew: false };
+        if (online) {
+          const cells = m.cells.slice(); cells[mi('EMAIL')] = em; const emChanged = em !== String(m.email || '').trim();
+          this.memOp({ op: 'perso', code: c1 || '' }).then(ok => { if (!ok) return; if (c1) { try { sessionStorage.setItem('lyre-membre-code', c1); } catch (er) {} }
+            if (emChanged && this._srvLoaded) { const te = this.state.tableEdits || {}; this.setState({ tableEdits: { ...te, membres: { ...(te.membres || {}), [m.rawId]: cells } } }); }
+            (emChanged && !this._srvLoaded ? this.memOp({ op: 'profil', cells }) : Promise.resolve(true)).then(ok2 => { if (ok2) this.setState({ mFirst: false, mfNew: false }); }); });
+          return;
+        }
         if (em !== String(m.email || '').trim()) { const te = st.tableEdits || {}, cells = m.cells.slice(); cells[mi('EMAIL')] = em; extra.tableEdits = { ...te, membres: { ...(te.membres || {}), [m.rawId]: cells } }; }
         saveEsp({ ...esp, perso }, extra);
       },
@@ -4428,7 +4597,7 @@ class Component extends DCLogic {
       isMCustom: (Array.isArray(esp.cats) ? esp.cats : []).some(c => c.k === tab), mCustomTitle: ((Array.isArray(esp.cats) ? esp.cats : []).find(c => c.k === tab) || {}).label || '',
       mCustomItems: mine.filter(it => it.type === tab).sort((a, b) => byDate(b, a)).map(it => ({ title: it.title, meta: it.fileName ? fileMeta(it) : fNum(it.date), text: it.text, hasText: !!it.text, hasFile: !!it.fileName, dl: download(it) })),
       ...(() => {
-        const list = Array.isArray(st.covoit) ? st.covoit : COVOIT_DEFAULT;
+        const list = md ? (Array.isArray(md.covoit) ? md.covoit : []) : (Array.isArray(st.covoit) ? st.covoit : COVOIT_DEFAULT);
         const save = (l) => { try { localStorage.setItem('lyre-covoit', JSON.stringify(l)); } catch (er) {} this.setState({ covoit: l }); };
         const evOpts = (allEvents || []).filter(ev => ev.upcoming).slice(0, 8).map(ev => ev.title + ' · ' + ev.date + ' ' + ev.year).concat(['Répétition harmonie (mercredi soir)', 'Répétition chorale (vendredi soir)', 'Autre']);
         const blank = { type: 'offre', ev: evOpts[0], from: '', date: '', time: '', seats: '3', note: '' };
@@ -4452,6 +4621,7 @@ class Component extends DCLogic {
           cvSave: (e) => { if (e) e.preventDefault(); if (!m) return; const x = this.state.cvd || blank;
             if (!x.from.trim()) return this.setState({ cvErr: d.type === 'offre' ? 'Indiquez votre lieu de départ.' : 'Indiquez où vous êtes.' });
             if (!x.date) return this.setState({ cvErr: 'Indiquez la date.' });
+            if (online) { this.memOp({ op: 'cv-add', entry: { type: x.type, ev: x.ev, from: x.from.trim(), date: x.date, time: x.time.trim(), seats: Math.max(1, parseInt(x.seats, 10) || 1), note: x.note.trim() } }).then(ok => { if (ok) this.setState({ cvd: null }); }); return; }
             save([{ id: 'cv' + Date.now(), type: x.type, authorId: me, author: m.name, tel: m.tel || '', ev: x.ev, from: x.from.trim(), date: x.date, time: x.time.trim(), seats: Math.max(1, parseInt(x.seats, 10) || 1), note: x.note.trim(), takers: [] }].concat(list));
             this.setState({ cvd: null }); },
           cvFilters: [['tous', 'Toutes les annonces', '#17161c', 'Tous'], ['offre', 'Places proposées', '#2f7d3a', 'Proposé'], ['recherche', 'Places recherchées', '#2b6fb5', 'Recherché']].map(([k, l, col, sh]) => ({ label: l, short: sh, style: pill(f === k, col), pick: (e) => { if (e) e.preventDefault(); this.setState({ cvFilter: k }); } })),
@@ -4471,8 +4641,8 @@ class Component extends DCLogic {
               canAct: !mine && (joined || !done),
               actLabel: joined ? (off ? 'Annuler ma réservation' : 'Je ne peux plus') : (off ? 'Réserver une place' : "Je peux l'emmener"),
               actStyle: (joined ? 'border:1.5px solid #17161c; color:#17161c' : 'background:#17161c; color:#fff') + '; padding:8px 14px; border-radius:999px; font-size:13px; font-weight:700',
-              act: (e) => { if (e) e.preventDefault(); if (!m) return; save(list.map(x => x.id !== c.id ? x : { ...x, takers: joined ? (x.takers || []).filter(t => t.id !== me) : (x.takers || []).concat([{ id: me, name: m.name }]) })); },
-              del: (e) => { if (e) e.preventDefault(); save(list.filter(x => x.id !== c.id)); }
+              act: (e) => { if (e) e.preventDefault(); if (!m) return; if (online) { this.memOp({ op: 'cv-join', cid: c.id, join: !joined }); return; } save(list.map(x => x.id !== c.id ? x : { ...x, takers: joined ? (x.takers || []).filter(t => t.id !== me) : (x.takers || []).concat([{ id: me, name: m.name }]) })); },
+              del: (e) => { if (e) e.preventDefault(); if (online) { this.memOp({ op: 'cv-del', cid: c.id }); return; } save(list.filter(x => x.id !== c.id)); }
             };
           })
         };
@@ -4491,16 +4661,17 @@ class Component extends DCLogic {
       mPolls: polls.map(it => ({ kind: sondKind(it), kindStyle: SOND_KINDS[sondKind(it)] + '; align-self:flex-start; font-size:12px; font-weight:700; padding:3px 10px; border-radius:999px', title: it.title, date: fLongY(it.date), where: [it.time, it.place].filter(Boolean).join(' · '), text: it.text, hasText: !!it.text, answered: !!myVote(it),
         choices: VOTE_CHOICES.map(c => ({ label: c, pick: vote(it, c), style: 'padding:10px 18px; border-radius:999px; font-size:14px; font-weight:700; cursor:pointer; ' + (myVote(it) === c ? VOTE_STYLE[c] + '; border:1.5px solid currentColor' : 'border:1.5px solid #d9d6cf; color:#17161c') })) })),
       hasMPolls: polls.length > 0,
-      mPhotoStyle: m && (st.memPhotos || {})[m.id] ? "width:104px; height:104px; background:url('" + viewUrl(st.memPhotos[m.id]) + "') center/cover no-repeat" : '', mHasPhoto: !!(m && (st.memPhotos || {})[m.id]), mNoPhoto: !(m && (st.memPhotos || {})[m.id]),
-      mPhotoBtn: m && (st.memPhotos || {})[m.id] ? 'Changer la photo' : 'Ajouter ma photo',
+      mPhotoStyle: m && memPh[m.id] ? "width:104px; height:104px; background:url('" + viewUrl(memPh[m.id]) + "') center/cover no-repeat" : '', mHasPhoto: !!(m && memPh[m.id]), mNoPhoto: !(m && (st.memPhotos || {})[m.id]),
+      mPhotoBtn: m && memPh[m.id] ? 'Changer la photo' : 'Ajouter ma photo',
       mInitials: m ? ((m.prenom[0] || '') + (m.nom[0] || '')).toUpperCase() || '?' : '', mName: m ? m.name : '',
       mFonction: m ? ([m.cells[mi('FONCTION')], m.ens.join(', ')].filter(Boolean).join(' · ') || 'Membre') : '',
       mPickPhoto: (e) => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f || !m) return; const rd = new FileReader();
         rd.onload = () => { const img = new Image(); img.onload = () => { const s = Math.min(img.width, img.height), c = document.createElement('canvas'); c.width = c.height = 320;
           c.getContext('2d').drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, 320, 320); let url = c.toDataURL('image/webp', 0.8); if (url.indexOf('data:image/webp') !== 0) url = c.toDataURL('image/jpeg', 0.8);
+          if (online) { this.memOp({ op: 'photo', url }); return; }
           this.setState(s2 => { const p = { ...(s2.memPhotos || {}), [m.id]: url }; try { localStorage.setItem('lyre-memPhotos', JSON.stringify(p)); } catch (er) {} return { memPhotos: p }; }); }; img.src = rd.result; };
         rd.readAsDataURL(f); },
-      mDelPhoto: (e) => { if (e) e.preventDefault(); if (!m) return; this.setState(s2 => { const p = { ...(s2.memPhotos || {}) }; delete p[m.id]; try { localStorage.setItem('lyre-memPhotos', JSON.stringify(p)); } catch (er) {} return { memPhotos: p }; }); },
+      mDelPhoto: (e) => { if (e) e.preventDefault(); if (!m) return; if (online) { this.memOp({ op: 'photo', url: null }); return; } this.setState(s2 => { const p = { ...(s2.memPhotos || {}) }; delete p[m.id]; try { localStorage.setItem('lyre-memPhotos', JSON.stringify(p)); } catch (er) {} return { memPhotos: p }; }); },
       prof, setProfTel: setProf('tel'), setProfEmail: setProf('email'), setProfPup: setProf('pup'),
       profEnsOpts: ENSEMBLES.concat((prof.ens || []).filter(x => ENSEMBLES.indexOf(x) === -1)).map(label => { const on = (prof.ens || []).indexOf(label) > -1; return { label, style: (on ? PILL_ON : PILL_OFF) + '; font-size:14px; font-weight:700; min-height:40px; display:inline-flex; align-items:center', toggle: (e) => { if (e) e.preventDefault(); this.setState(s => { const p = s.mProf || prof, cur = p.ens || []; return { mProf: { ...p, ens: cur.indexOf(label) > -1 ? cur.filter(x => x !== label) : cur.concat([label]) }, profSaved: false, profErr: '' }; }); } }; }), profSaved: !!st.profSaved, profErr: st.profErr || '', hasProfErr: !!st.profErr,
       mEns: m ? (m.ens.join(', ') || '—') : '', mPup: m ? (m.pup.join(', ') || '—') : '', mDepuis: m ? (m.depuis || '—') : '',
@@ -4508,6 +4679,7 @@ class Component extends DCLogic {
         if (e) e.preventDefault();
         if (prof.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(prof.email.trim())) return this.setState({ profErr: 'Adresse e-mail invalide.' });
         const cells = m.cells.slice(); cells[mi('TÉLÉPHONE')] = fmtTel(prof.tel); cells[mi('EMAIL')] = (prof.email || '').trim(); cells[mi('ENSEMBLES')] = (prof.ens || []).join(', '); cells[mi('PUPITRES / INSTRUMENTS')] = splitV(prof.pup).join(', ');
+        if (remote) { this.memOp({ op: 'profil', cells }).then(ok => { if (ok) this.setState({ mProf: null, profSaved: true }); }); return; }
         this.setState(s => ({ tableEdits: { ...(s.tableEdits || {}), membres: { ...((s.tableEdits || {}).membres || {}), [m.rawId]: cells } }, mProf: null, profSaved: true }));
       },
       cotRows, hasCot: cotRows.length > 0, hasNoCot: cotRows.length === 0,
@@ -4642,6 +4814,7 @@ class Component extends DCLogic {
       if (miss.length) { this.setState({ ficheErr: 'À compléter : ' + miss.join(', ') + '.' }); return; }
       const r = row();
       try { const L = JSON.parse(localStorage.getItem('lyre-inscriptions') || '[]'); L.unshift({ at: new Date().toISOString(), row: r, pret: !!F.pret, solfege: !!(F.ecole && F.solfege), message: F.message || '', total }); localStorage.setItem('lyre-inscriptions', JSON.stringify(L.slice(0, 300))); } catch (er) {}
+      if (srvOn()) { try { fetch('donnees.php?part=inscription', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: { cols: COLS, row: r, pret: !!F.pret, solfege: !!(F.ecole && F.solfege), message: F.message || '', total } }) }).catch(() => {}); } catch (er) {} }
       const body = COLS.map((c, i) => r[i] ? c + ' : ' + r[i] : null).filter(Boolean).join('\n')
         + (F.ecole && F.solfege ? '\nFORMATION MUSICALE (SOLFÈGE) : oui' : '') + (F.pret ? '\nPRÊT D\'INSTRUMENT : demandé' : '')
         + '\n\nMONTANT ESTIMÉ : ' + eu(total) + '\n' + lines.map(l => '  · ' + l.label + ' : ' + eu(l.amount)).join('\n') + (echOn ? '\n\nÉCHÉANCIER (chèques) : ' + echTxt() : '')
@@ -5952,10 +6125,21 @@ class Component extends DCLogic {
       })(),
       sigNameV: sigName(), sigLineV: sigLine(),
       srvMsg: st.srvMsg || (srvCode() ? '' : "Les données sont pour l'instant enregistrées dans ce navigateur. Entrez le code du serveur pour les enregistrer sur OVH et les partager avec le bureau."), srvErrStyle: 'font-size:13.5px; font-weight:600; overflow-wrap:anywhere; color:' + (st.srvErr ? '#8f1d2c' : st.srvOk ? '#2f5a1f' : '#4a4853'),
+      ...(() => { const L = Array.isArray(st.inscr) ? st.inscr : [];
+        const cell = (v) => { const x = String(v == null ? '' : v); return /[;"\n]/.test(x) ? '"' + x.replace(/"/g, '""') + '"' : x; };
+        return { inscrHas: L.length > 0, inscrTitle: L.length + ' fiche' + (L.length > 1 ? 's' : '') + ' reçue' + (L.length > 1 ? 's' : '') + ' par le site (aussi envoyée' + (L.length > 1 ? 's' : '') + ' par e-mail). Le tableur s’importe dans Membres asso.',
+          inscrOpen: !!st.inscrOpen, inscrToggleLabel: st.inscrOpen ? 'Masquer' : 'Voir la liste', inscrToggle: (e) => { if (e) e.preventDefault(); this.setState({ inscrOpen: !st.inscrOpen }); },
+          inscrRows: L.map(x => { const d = x.data || {}, row = d.row || [];
+            return { name: ((row[0] || '') + ' ' + (row[1] || '')).trim() || 'Sans nom', when: x.at ? new Date(x.at).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '',
+              del: (e) => { if (e) e.preventDefault(); if (!window.confirm('Retirer cette fiche de la liste ?')) return; srvPost('inscriptions', { op: 'del', id: x.id }, srvCode()).then(r => { if (r.ok) this.setState({ inscr: r.list || [] }); }).catch(() => {}); } }; }),
+          inscrCsv: (e) => { if (e) e.preventDefault(); if (!L.length) return;
+            const cols = ((L[0].data || {}).cols || []).concat(['REÇUE LE', 'PRÊT INSTRUMENT', 'SOLFÈGE', 'TOTAL', 'MESSAGE']);
+            const lines = [cols.map(cell).join(';')].concat(L.map(x => { const d = x.data || {}; return (d.row || []).concat([x.at ? new Date(x.at).toLocaleString('fr-FR') : '', d.pret ? 'oui' : '', d.solfege ? 'oui' : '', d.total != null ? String(d.total).replace('.', ',') : '', d.message || '']).map(cell).join(';'); }));
+            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' })); a.download = 'fiches-inscription.csv'; a.click(); } }; })(),
       srvHasCode: !!srvCode(), srvNoCode: !srvCode(), srvCodeIn: st.srvCodeIn || '', setSrvCodeIn: (e) => this.setState({ srvCodeIn: e.target.value }),
       srvConnect: (e) => { if (e) e.preventDefault(); const c = String(st.srvCodeIn || '').trim(); if (!c) return; this.setState({ srvMsg: 'Connexion au serveur…', srvErr: false }); this.srvLoad(c).then(ok => { if (ok) { srvSetCode(c); this.setState({ srvCodeIn: '' }); } }); },
       srvReload: (e) => { if (e) e.preventDefault(); this.setState({ srvMsg: 'Rechargement depuis le serveur…', srvErr: false }); this.srvLoad(srvCode()); },
-      srvLogout: (e) => { if (e) e.preventDefault(); srvSetCode(''); this._srvLoaded = false; this.setState({ srvMsg: 'Code du serveur oublié sur cet ordinateur.', srvErr: false, srvOk: false }); },
+      srvLogout: (e) => { if (e) e.preventDefault(); srvSetCode(''); this._srvLoaded = false; this._base = null; this.srvSaveBase(); this.setState({ srvMsg: 'Code du serveur oublié sur cet ordinateur.', srvErr: false, srvOk: false }); },
       sentMsg: st.directMsg ? st.directMsg : st.photosCopied ? 'Votre messagerie s’est ouverte. Le message complet, avec les photos et la signature, est copié : dans le corps de l’e-mail, sélectionnez tout et collez (Ctrl+V ou Cmd+V). Ajoutez ensuite les pièces jointes.' : st.sigCopied ? 'Votre messagerie s’est ouverte. La signature avec le logo est copiée : collez-la (Ctrl+V ou Cmd+V) en bas du message avant d’envoyer.' : 'Votre messagerie s’est ouverte avec le message prêt à partir.',
       stopProp: (e) => e.stopPropagation(),
       mailFiles: (st.mailFiles || []).map((f, k) => ({ name: f.name, size: f.size, isImg: !!f.url, thumb: f.url ? "width:40px; height:40px; flex:none; border-radius:6px; background:url('" + viewUrl(f.url) + "') center/cover no-repeat" : '', del: (e) => { if (e) e.preventDefault(); this.setState(s => ({ mailFiles: (s.mailFiles || []).filter((x, j) => j !== k) })); } })),
@@ -5993,7 +6177,7 @@ class Component extends DCLogic {
         this.setState({ view: 'admin', meId: u.id, pwd: '', pwdError: false, accounts: updated, connLog: logIt(true, 'connexion réussie') });
         window.scrollTo(0, 0);
       },
-      logout: (e) => { if (e) e.preventDefault(); sessionStorage.removeItem('lyre-admin'); sessionStorage.removeItem('lyre-membre'); this.setState({ view: 'site', page: 'accueil', meId: null, memId: null }); window.scrollTo(0, 0); },
+      logout: (e) => { if (e) e.preventDefault(); sessionStorage.removeItem('lyre-admin'); sessionStorage.removeItem('lyre-membre'); sessionStorage.removeItem('lyre-membre-code'); this.setState({ view: 'site', page: 'accueil', meId: null, memId: null }); window.scrollTo(0, 0); },
       goAdmin: (e) => { if (e) e.preventDefault(); this.setState({ view: accounts.some(x => x.id === st.meId && x.active) ? 'admin' : 'login', pwd: '', pwdError: false }); window.scrollTo(0, 0); },
       submitForm: (e) => { if (e) e.preventDefault(); this.setState({ submitted: true }); }
     };
