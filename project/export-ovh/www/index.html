@@ -3482,7 +3482,11 @@ const VID_MAX = 8 * 1048576;
 const readVid = (f, cb, err) => { if (f.size > VID_MAX) { if (err) err(); return; } const rd = new FileReader(); rd.onload = () => cb(rd.result); rd.readAsDataURL(f); };
 // Réduction automatique du poids des photos : WebP, 1280 px max, puis baisse de qualité/taille jusqu'à ~250 Ko.
 const IMG_BUDGET = 340000; // longueur max de l'image encodée (~250 Ko)
-const compressImg = (f, cb, max = 1280, q = 0.75, budget = IMG_BUDGET) => {
+// Envois par série : les photos sont traitées une par une (évite de saturer la mémoire avec 50 photos d'un coup).
+let imgQ = Promise.resolve();
+const compressImg = (f, cb, max, q, budget) => { imgQ = imgQ.then(() => new Promise(ok => { let done = false; const fin = (u) => { if (done) return; done = true; ok(); try { cb(u); } catch (e) { console.warn(e); } };
+  try { compressOne(f, fin, max, q, budget); } catch (e) { ok(); } })); };
+const compressOne = (f, cb, max = 1280, q = 0.75, budget = IMG_BUDGET) => {
   const r = new FileReader();
   r.onload = () => {
     const img = new Image();
@@ -3497,6 +3501,7 @@ const compressImg = (f, cb, max = 1280, q = 0.75, budget = IMG_BUDGET) => {
     img.onerror = () => cb(r.result);
     img.src = r.result;
   };
+  r.onerror = () => cb('');
   r.readAsDataURL(f);
 };
 // Stockage de secours quand le localStorage (~5 Mo) est plein : IndexedDB (plusieurs centaines de Mo).
