@@ -3480,15 +3480,18 @@ const GAL_BASE = [
 const isVid = (s) => /^data:video\/|\.(mp4|webm|mov|m4v)(\?|$)/i.test(String(s || ''));
 const VID_MAX = 8 * 1048576;
 const readVid = (f, cb, err) => { if (f.size > VID_MAX) { if (err) err(); return; } const rd = new FileReader(); rd.onload = () => cb(rd.result); rd.readAsDataURL(f); };
-const compressImg = (f, cb, max = 1600, q = 0.78) => {
+// Réduction automatique du poids des photos : WebP, 1280 px max, puis baisse de qualité/taille jusqu'à ~250 Ko.
+const IMG_BUDGET = 340000; // longueur max de l'image encodée (~250 Ko)
+const compressImg = (f, cb, max = 1280, q = 0.75, budget = IMG_BUDGET) => {
   const r = new FileReader();
   r.onload = () => {
     const img = new Image();
     img.onload = () => {
-      const s = Math.min(1, max / Math.max(img.width, img.height));
-      const c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
-      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-      let u = c.toDataURL('image/webp', q); if (u.indexOf('data:image/webp') !== 0) u = c.toDataURL('image/jpeg', q);
+      const enc = (sc, qq) => { const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(img.width * sc)); c.height = Math.max(1, Math.round(img.height * sc));
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        let u = c.toDataURL('image/webp', qq); if (u.indexOf('data:image/webp') !== 0) u = c.toDataURL('image/jpeg', qq); return u; };
+      let s = Math.min(1, max / Math.max(img.width, img.height)), qq = q, u = enc(s, qq), n = 0;
+      while (u.length > budget && n++ < 8) { if (qq > 0.55) qq = Math.round((qq - 0.1) * 100) / 100; else s *= 0.8; u = enc(s, qq); }
       cb(u.length < r.result.length || s < 1 ? u : r.result);
     };
     img.onerror = () => cb(r.result);
@@ -3496,6 +3499,10 @@ const compressImg = (f, cb, max = 1600, q = 0.78) => {
   };
   r.readAsDataURL(f);
 };
+// Stockage de secours quand le localStorage (~5 Mo) est plein : IndexedDB (plusieurs centaines de Mo).
+const idbOpen = () => new Promise((ok, ko) => { try { const q = indexedDB.open('lyre', 1); q.onupgradeneeded = () => q.result.createObjectStore('kv'); q.onsuccess = () => ok(q.result); q.onerror = () => ko(q.error); } catch (e) { ko(e); } });
+const idbSet = (k, v) => idbOpen().then(db => new Promise((ok, ko) => { const t = db.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = () => ok(true); t.onerror = () => ko(t.error); }));
+const idbGet = (k) => idbOpen().then(db => new Promise((ok, ko) => { const g = db.transaction('kv').objectStore('kv').get(k); g.onsuccess = () => ok(g.result); g.onerror = () => ko(g.error); }));
 const pdfToImg = (f, cb, max = 1400, q = 0.85) => {
   import('https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.min.mjs').then(async (pdfjs) => {
     pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.worker.min.mjs';
@@ -4160,8 +4167,13 @@ class Component extends DCLogic {
     const out = {};
     PERSIST_KEYS.forEach(k => { out[k] = this.state[k]; });
     this.srvPush(out);
-    try { localStorage.setItem('lyre-donnees', JSON.stringify(out)); if (this.state.saveErr) this.setState({ saveErr: '' }); }
-    catch (e) { console.warn('Enregistrement local impossible : ' + String(e && e.message || e)); this.setState({ saveErr: "L'espace de stockage du navigateur est plein : la dernière modification n'a pas pu être enregistrée. Supprimez quelques photos ajoutées ou utilisez des images plus légères." }); }
+    const json = JSON.stringify(out), okSave = () => { if (this.state.saveErr && /stockage du navigateur/.test(this.state.saveErr)) this.setState({ saveErr: '' }); };
+    try { localStorage.setItem('lyre-donnees', json); okSave(); }
+    catch (e) {
+      try { localStorage.removeItem('lyre-donnees'); } catch (e2) {}
+      idbSet('lyre-donnees', json).then(() => { try { localStorage.setItem('lyre-donnees', '{"__idb":1}'); } catch (e3) {} okSave(); })
+        .catch((e4) => { console.warn('Enregistrement local impossible : ' + String(e4 && e4.message || e4)); this.setState({ saveErr: "L'espace de stockage du navigateur est plein : la dernière modification n'a pas pu être enregistrée sur cet ordinateur. Supprimez quelques photos ou vidéos anciennes, puis réessayez." }); });
+    }
   }
 
   componentDidMount() {
@@ -4172,13 +4184,17 @@ class Component extends DCLogic {
       else if (v === 'admin') this.setState({ view: 'admin', apercuAdmin: true, admin: p || 'actus', ...(q ? { comptaTab: q, ecEdit: (q === 'recettes' || q === 'depenses') ? 'new' : null, ecf: { q: '', type: q === 'recettes' ? 'recette' : q === 'depenses' ? 'depense' : '', poste: '', regl: '' } } : {}) });
       else this.setState({ view: v }); } } catch (e) {}
     try {
+      const restore = (saved) => {
+        const patch = {};
+        PERSIST_KEYS.forEach(k => { if (saved[k] !== undefined && saved[k] !== null && typeof saved[k] === typeof this.state[k]) patch[k] = saved[k]; });
+        this._restored = true;
+        if (Object.keys(patch).length) this.setState(patch);
+        else this._lastSnap = PERSIST_KEYS.map(k => this.state[k]);
+        setTimeout(() => this.srvLoad(srvCode()), 50);
+      };
       const saved = loadSaved();
-      const patch = {};
-      PERSIST_KEYS.forEach(k => { if (saved[k] !== undefined && saved[k] !== null && typeof saved[k] === typeof this.state[k]) patch[k] = saved[k]; });
-      this._restored = true;
-      if (Object.keys(patch).length) this.setState(patch);
-      else this._lastSnap = PERSIST_KEYS.map(k => this.state[k]);
-      setTimeout(() => this.srvLoad(srvCode()), 50);
+      if (saved.__idb) idbGet('lyre-donnees').then(j => { let d = {}; try { d = JSON.parse(j || '{}') || {}; } catch (e) {} restore(d); }).catch(() => restore({}));
+      else restore(saved);
     } catch (e) {
       this._restored = true; console.warn('Lecture des données locales impossible : ' + String(e && e.message || e)); }
     this._zoom = (e) => {
