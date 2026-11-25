@@ -11,6 +11,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action !== 'televerser') { $in = j
 $A = lyre_annuaire();
 $public = function ($m) { return ['id' => (string)$m['id'], 'prenom' => $m['prenom'] ?? '', 'nom' => $m['nom'] ?? '', 'ens' => array_values((array)($m['ens'] ?? [])), 'pup' => array_values((array)($m['pup'] ?? [])), 'byEns' => (object)($m['byEns'] ?? []), 'depuis' => $m['depuis'] ?? '']; };
 $trouve = function ($id) use ($A) { foreach ($A as $m) if ((string)$m['id'] === (string)$id) return $m; return null; };
+// Compte d'administration actif de la même personne (même nom, ou même adresse e-mail), s'il existe.
+$compteDe = function ($m) { $C = lyre_comptes(); if (!$C) return null; $nom = lyre_norm(($m['prenom'] ?? '') . ' ' . ($m['nom'] ?? '')); $mel = strtolower(trim((string)($m['email'] ?? '')));
+  foreach ($C['comptes'] as $c) if (!empty($c['active']) && (lyre_norm($c['name']) === $nom || ($mel !== '' && strtolower(trim((string)($c['email'] ?? ''))) === $mel))) return $c; return null; };
 $esp = function () { $o = json_decode(lyre_espace_json()); return (is_object($o) && isset($o->esp) && is_object($o->esp)) ? $o->esp : new stdClass(); };
 
 // Liste pour le menu « Choisissez votre nom » : prénom et initiale seulement, visible avant connexion.
@@ -35,13 +38,12 @@ if ($action === 'connexion') {
   $m = $trouve($id);
   if (!$m) { sleep(1); out(401, ['ok' => false, 'error' => 'Choisissez votre nom dans la liste ou saisissez votre adresse e-mail.']); }
   $e = $esp(); $codes = lyre_fichier_lire('codes') ?: []; $commun = (isset($e->code) && is_string($e->code) && $e->code !== '') ? $e->code : 'LYRE2026';
-  $perso = isset($codes[$id]); $ok = $perso ? password_verify($code, (string)$codes[$id]) : (lyre_norm($code) === lyre_norm($commun) && $code !== '');
-  // Un membre du bureau peut aussi entrer avec le mot de passe de son compte.
-  $admin = null;
-  if (!$ok && $code !== '') { $C = lyre_comptes(); $nom = lyre_norm(($m['prenom'] ?? '') . ' ' . ($m['nom'] ?? ''));
-    $mel = strtolower(trim((string)($m['email'] ?? '')));
-    foreach (($C['comptes'] ?? []) as $c) if (!empty($c['active']) && (lyre_norm($c['name']) === $nom || ($mel !== '' && strtolower((string)($c['email'] ?? '')) === $mel)) && password_verify($code, (string)$c['hash'])) { $ok = true; $admin = ['jeton' => lyre_jeton('b', $c['id'], 16), 'compte' => lyre_compte_public($c), 'comptes' => array_map('lyre_compte_public', $C['comptes'])]; } }
-  if (!$ok) { lyre_essais($cle, true); sleep(1); out(401, ['ok' => false, 'error' => $mail !== '' && ($in['id'] ?? '') === '' ? 'Adresse e-mail ou code d’accès incorrect.' : ($perso ? 'Code personnel incorrect. Vous l’avez choisi lors de votre première connexion.' : 'Code d’accès incorrect.')]); }
+  $admin = null; $acc = $compteDe($m); $perso = isset($codes[$id]);
+  if ($acc) { // membre du bureau : un seul mot de passe, celui de son compte d'administration
+    $ok = $code !== '' && password_verify($code, (string)$acc['hash']);
+    if ($ok) { $C = lyre_comptes(); $admin = ['jeton' => lyre_jeton('b', $acc['id'], 16), 'compte' => lyre_compte_public($acc), 'comptes' => array_map('lyre_compte_public', $C['comptes'])]; }
+  } else $ok = $perso ? password_verify($code, (string)$codes[$id]) : (lyre_norm($code) === lyre_norm($commun) && $code !== '');
+  if (!$ok) { lyre_essais($cle, true); sleep(1); out(401, ['ok' => false, 'error' => $acc ? 'Membre du bureau : entrez avec le mot de passe de votre compte d’administration (le même pour les deux espaces).' : ($mail !== '' && ($in['id'] ?? '') === '' ? 'Adresse e-mail ou code d’accès incorrect.' : ($perso ? 'Code personnel incorrect. Vous l’avez choisi lors de votre première connexion.' : 'Code d’accès incorrect.'))]); }
   lyre_essais($cle, false);
   $done = isset($e->perso) && is_object($e->perso) && isset($e->perso->$id) && !empty($e->perso->$id->done);
   out(200, ['ok' => true, 'jeton' => lyre_jeton('m', $id, 24 * 30), 'moi' => $m, 'annuaire' => array_map($public, $A), 'premier' => !$done && !$admin, 'admin' => $admin]);
@@ -109,10 +111,12 @@ if ($action === 'oubli') {
   if ($id === '' && $mail !== '') { $t = []; foreach ($A as $x) if (strtolower(trim((string)($x['email'] ?? ''))) === $mail) $t[] = (string)$x['id']; if (count($t) === 1) $id = $t[0]; }
   $m = $id !== '' ? $trouve($id) : null; if (!$m) { sleep(1); out(200, $msg); }
   $to = strtolower(trim((string)($m['email'] ?? ''))); if (!filter_var($to, FILTER_VALIDATE_EMAIL)) { sleep(1); out(200, $msg); }
-  $p = lyre_b64(json_encode(['t' => 'mr', 'id' => (string)$m['id'], 'h' => $empM((string)$m['id']), 'exp' => time() + 3600]));
+  // Membre du bureau : le lien change le mot de passe du compte d'administration (le même pour les deux espaces).
+  $acc = $compteDe($m);
+  $p = lyre_b64(json_encode($acc ? ['t' => 'r', 'id' => (string)$acc['id'], 'h' => substr(hash('sha256', (string)$acc['hash']), 0, 16), 'exp' => time() + 3600] : ['t' => 'mr', 'id' => (string)$m['id'], 'h' => $empM((string)$m['id']), 'exp' => time() + 3600]));
   $jeton = $p . '.' . lyre_b64(hash_hmac('sha256', $p, lyre_secret(), true));
   $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
-  $lien = ($https ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/') . '/#mreinit=' . $jeton;
+  $lien = ($https ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/') . ($acc ? '/#reinit=' : '/#mreinit=') . $jeton;
   $nom = trim(($m['prenom'] ?? '') . ' ' . ($m['nom'] ?? ''));
   $txt = "Bonjour " . ($m['prenom'] ?? $nom) . ",\n\nVous avez demandé à choisir un nouveau code pour l'espace membres du site de La Lyre Léréenne.\n\nOuvrez ce lien (valable 1 heure, une seule fois) :\n" . $lien . "\n\nSi vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail : votre code actuel reste valable.\n\nLa Lyre Léréenne";
   $h = '<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#17161c;max-width:520px">'

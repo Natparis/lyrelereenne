@@ -118,6 +118,17 @@ if ($action === 'connexion') {
 $qui = lyre_bureau($cfg);
 if (!$qui) { sleep(1); out(401, ['ok' => false, 'error' => 'Session expirée : reconnectez-vous.']); }
 
+// Changer son propre mot de passe (depuis l'espace membres ou l'administration) : il vaut pour les deux espaces.
+if ($action === 'mdp') {
+  if ($qui['via'] !== 'jeton') out(400, ['ok' => false, 'error' => 'Connectez-vous avec votre compte pour changer votre mot de passe.']);
+  $pwd = (string)($in['pwd'] ?? ''); if (strlen($pwd) < 6) out(400, ['ok' => false, 'error' => 'Le mot de passe doit faire au moins 6 caractères.']);
+  $l = lyre_verrou(); $C = lyre_comptes(); $i = -1; foreach ($C['comptes'] as $k => $x) if ((string)$x['id'] === (string)$qui['compte']['id']) $i = $k;
+  if ($i < 0) { lyre_deverrou($l); out(404, ['ok' => false, 'error' => 'Compte introuvable.']); }
+  $C['comptes'][$i]['hash'] = password_hash($pwd, PASSWORD_DEFAULT); $C['comptes'][$i]['defaut'] = ($pwd === 'lyre2026');
+  array_unshift($C['journal'], ['at' => gmdate('c'), 'name' => $C['comptes'][$i]['name'], 'login' => $C['comptes'][$i]['login'], 'ok' => true, 'result' => 'mot de passe changé par la personne']);
+  $C['journal'] = array_slice($C['journal'], 0, 200); $ok = lyre_fichier_ecrire('comptes', $C); lyre_deverrou($l);
+  out($ok ? 200 : 500, $ok ? ['ok' => true] : ['ok' => false, 'error' => 'Écriture impossible sur le serveur.']);
+}
 if ($action === 'liste') out(200, ['ok' => true, 'comptes' => $liste($C), 'journal' => lyre_droit($qui, 'droits') ? $C['journal'] : []]);
 
 if (!lyre_droit($qui, 'droits')) out(403, ['ok' => false, 'error' => 'Votre compte ne donne pas accès à « Comptes et droits ».']);
