@@ -5,3 +5,4 @@
 - Le site doit rester responsive, pensé d'abord pour le mobile (sauf les affiches).
 - Vue mobile uniquement (≤ 640 px) : aucune barre de défilement (ascenseur) visible, le défilement reste actif. Ne pas la masquer sur ordinateur.
 - Les fichiers zip préparés pour l'utilisatrice commencent toujours par « lyre- » (ex. lyre-mise-a-jour-ovh.zip).
+- Avant toute modification du site : partir de la version la plus récente (projet Claude Design « La Lyre Léréenne », https://claude.ai/artifact/NyEgdcoBNZizx38NeGn2sC) et la comparer avec le site en ligne. Le dossier project/ de ce dépôt date du 9/11 et n'est pas à jour.
