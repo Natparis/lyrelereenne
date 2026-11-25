@@ -98,6 +98,48 @@ if ($action === 'inscription') {
   out($ok ? 200 : 500, ['ok' => $ok]);
 }
 
+// Code oublié : un lien valable 1 heure, utilisable une seule fois, est envoyé à l'adresse e-mail de la fiche du membre.
+$empM = function ($id) { $codes = lyre_fichier_lire('codes') ?: []; return substr(hash('sha256', 'm|' . (string)($codes[$id] ?? 'aucun')), 0, 16); };
+if ($action === 'oubli') {
+  $cle = 'moubli|' . lyre_ip();
+  if (!lyre_essais($cle)) out(429, ['ok' => false, 'error' => 'Trop de demandes. Réessayez dans un quart d’heure.']);
+  lyre_essais($cle, true);
+  $id = (string)($in['id'] ?? ''); $mail = strtolower(trim((string)($in['email'] ?? '')));
+  $msg = ['ok' => true, 'message' => 'Si votre fiche contient une adresse e-mail, un lien vient d’y être envoyé. Il est valable 1 heure. Pensez à regarder dans les courriers indésirables. Sans e-mail d’ici quelques minutes, demandez au bureau.'];
+  if ($id === '' && $mail !== '') { $t = []; foreach ($A as $x) if (strtolower(trim((string)($x['email'] ?? ''))) === $mail) $t[] = (string)$x['id']; if (count($t) === 1) $id = $t[0]; }
+  $m = $id !== '' ? $trouve($id) : null; if (!$m) { sleep(1); out(200, $msg); }
+  $to = strtolower(trim((string)($m['email'] ?? ''))); if (!filter_var($to, FILTER_VALIDATE_EMAIL)) { sleep(1); out(200, $msg); }
+  $p = lyre_b64(json_encode(['t' => 'mr', 'id' => (string)$m['id'], 'h' => $empM((string)$m['id']), 'exp' => time() + 3600]));
+  $jeton = $p . '.' . lyre_b64(hash_hmac('sha256', $p, lyre_secret(), true));
+  $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+  $lien = ($https ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/') . '/#mreinit=' . $jeton;
+  $nom = trim(($m['prenom'] ?? '') . ' ' . ($m['nom'] ?? ''));
+  $txt = "Bonjour " . ($m['prenom'] ?? $nom) . ",\n\nVous avez demandé à choisir un nouveau code pour l'espace membres du site de La Lyre Léréenne.\n\nOuvrez ce lien (valable 1 heure, une seule fois) :\n" . $lien . "\n\nSi vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail : votre code actuel reste valable.\n\nLa Lyre Léréenne";
+  $h = '<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#17161c;max-width:520px">'
+     . '<p>Bonjour ' . htmlspecialchars($m['prenom'] ?? $nom) . ',</p><p>Vous avez demandé à choisir un nouveau code pour l’espace membres du site de La Lyre Léréenne.</p>'
+     . '<p style="margin:24px 0"><a href="' . htmlspecialchars($lien) . '" style="background:#e3106e;color:#fff;text-decoration:none;font-weight:bold;padding:12px 22px;border-radius:999px;display:inline-block">Choisir mon nouveau code</a></p>'
+     . '<p style="font-size:13px;color:#5c5a64">Ce lien est valable 1 heure et ne sert qu’une fois. Si vous n’êtes pas à l’origine de cette demande, ignorez cet e-mail : votre code actuel reste valable.</p><p>La Lyre Léréenne</p></div>';
+  [$ok, $info] = lyre_mail($cfg, $to, 'Votre code de l’espace membres – La Lyre Léréenne', $txt, $h);
+  if (!$ok) out(502, ['ok' => false, 'error' => 'L’e-mail n’a pas pu être envoyé (' . $info . '). Demandez au bureau.']);
+  out(200, $msg);
+}
+if ($action === 'reinit') {
+  $d = lyre_jeton_lire((string)($in['jeton'] ?? '')); $code = (string)($in['code'] ?? '');
+  $perime = 'Ce lien n’est plus valable (il a déjà servi ou a plus d’une heure). Refaites une demande avec « Code oublié ».';
+  if (!$d || ($d['t'] ?? '') !== 'mr') out(400, ['ok' => false, 'error' => $perime]);
+  if (mb_strlen($code, 'UTF-8') < 6) out(400, ['ok' => false, 'error' => 'Le code doit faire au moins 6 caractères.']);
+  $id = (string)$d['id']; if (!$trouve($id)) out(400, ['ok' => false, 'error' => $perime]);
+  $l = lyre_verrou();
+  if (!hash_equals($empM($id), (string)($d['h'] ?? ''))) { lyre_deverrou($l); out(400, ['ok' => false, 'error' => $perime]); }
+  $codes = lyre_fichier_lire('codes') ?: []; $codes[$id] = password_hash($code, PASSWORD_DEFAULT);
+  $ok = lyre_fichier_ecrire('codes', $codes);
+  $o = json_decode(lyre_espace_json()); if (!is_object($o)) $o = new stdClass();
+  $pp = lyre_obj(lyre_obj(lyre_obj($o, 'esp'), 'perso'), $id); $pp->done = true; $pp->has = true; $pp->setAt = gmdate('c'); unset($pp->code);
+  if ($ok) $ok = lyre_fichier_ecrire('membres', $o);
+  lyre_deverrou($l);
+  out($ok ? 200 : 500, $ok ? ['ok' => true, 'id' => $id] : ['ok' => false, 'error' => 'Écriture impossible sur le serveur.']);
+}
+
 // ---- Réservé au bureau ----
 $qui = lyre_bureau($cfg);
 if (!$qui) { sleep(1); out(401, ['ok' => false, 'error' => 'Accès refusé : reconnectez-vous.']); }

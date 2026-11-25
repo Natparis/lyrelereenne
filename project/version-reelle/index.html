@@ -1207,24 +1207,50 @@
             <div style="font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:22px; line-height:1.1">La Lyre Léréenne</div>
           </div>
         </div>
-        <label style="display:grid; gap:7px; font-size:13px; font-weight:700">Votre nom
-          <select value="{{ mWho }}" onChange="{{ onMWho }}" style="border:1px solid #d9d6cf; border-radius:10px; padding:12px 14px; font-size:15px; font-family:'DM Sans',sans-serif; background:#fff">
-            <sc-for list="{{ mWhoOpts }}" as="o" hint-placeholder-count="1"><option value="{{ o.v }}">{{ o.t }}</option></sc-for>
-          </select>
-        </label>
-        <sc-if value="{{ mMailShow }}" hint-placeholder-val="{{ false }}">
-          <label style="display:grid; gap:7px; font-size:13px; font-weight:700">ou votre adresse e-mail
-            <input type="email" autocomplete="email" inputmode="email" value="{{ mMail }}" onChange="{{ onMMail }}" placeholder="prenom.nom@exemple.fr" style="border:1px solid #d9d6cf; border-radius:10px; padding:12px 14px; font-size:15px; font-family:'DM Sans',sans-serif">
+        <sc-if value="{{ mOkMsg }}" hint-placeholder-val="{{ false }}">
+          <div style="font-size:13.5px; color:#2f5a1f; background:#eef5e6; border-radius:10px; padding:10px 12px; font-weight:600; line-height:1.45">{{ mOkMsg }}</div>
+        </sc-if>
+        <sc-if value="{{ mLogOubli }}" hint-placeholder-val="{{ false }}">
+          <div style="font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:19px">Code oublié</div>
+          <p style="margin:0; font-size:14px; line-height:1.5; color:#4a4853">Choisissez votre nom ou saisissez votre adresse e-mail. Vous recevrez un lien pour choisir votre code personnel, à l’adresse enregistrée dans votre fiche.</p>
+        </sc-if>
+        <sc-if value="{{ mShowIdent }}" hint-placeholder-val="{{ true }}">
+          <label style="display:grid; gap:7px; font-size:13px; font-weight:700">Votre nom
+            <select value="{{ mWho }}" onChange="{{ onMWho }}" style="border:1px solid #d9d6cf; border-radius:10px; padding:12px 14px; font-size:15px; font-family:'DM Sans',sans-serif; background:#fff">
+              <sc-for list="{{ mWhoOpts }}" as="o" hint-placeholder-count="1"><option value="{{ o.v }}">{{ o.t }}</option></sc-for>
+            </select>
+          </label>
+          <sc-if value="{{ mMailShow }}" hint-placeholder-val="{{ false }}">
+            <label style="display:grid; gap:7px; font-size:13px; font-weight:700">ou votre adresse e-mail
+              <input type="email" autocomplete="email" inputmode="email" value="{{ mMail }}" onChange="{{ onMMail }}" placeholder="prenom.nom@exemple.fr" style="border:1px solid #d9d6cf; border-radius:10px; padding:12px 14px; font-size:15px; font-family:'DM Sans',sans-serif">
+            </label>
+          </sc-if>
+        </sc-if>
+        <sc-if value="{{ mLogNormal }}" hint-placeholder-val="{{ true }}">
+          <label style="display:grid; gap:7px; font-size:13px; font-weight:700">Code d'accès
+            <span style="position:relative; display:block"><input type="{{ mCodeType }}" autocomplete="current-password" value="{{ mCode }}" onChange="{{ onMCode }}" style="width:100%; box-sizing:border-box; border:1px solid #d9d6cf; border-radius:10px; padding:12px 96px 12px 14px; font-size:15px; font-family:'DM Sans',sans-serif"><button type="button" onClick="{{ mCodeToggle }}" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); border:0; background:#f1efe9; color:#17161c; border-radius:8px; padding:8px 11px; font-size:12.5px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif">{{ mCodeToggleTxt }}</button></span>
+            <span style="font-size:12.5px; font-weight:400; color:#5c5a64">Le code est communiqué par le bureau en début de saison. Membres du bureau : votre mot de passe admin fonctionne aussi et ouvre les deux espaces.</span>
           </label>
         </sc-if>
-        <label style="display:grid; gap:7px; font-size:13px; font-weight:700">Code d'accès
-          <span style="position:relative; display:block"><input type="{{ mCodeType }}" autocomplete="current-password" value="{{ mCode }}" onChange="{{ onMCode }}" style="width:100%; box-sizing:border-box; border:1px solid #d9d6cf; border-radius:10px; padding:12px 96px 12px 14px; font-size:15px; font-family:'DM Sans',sans-serif"><button type="button" onClick="{{ mCodeToggle }}" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); border:0; background:#f1efe9; color:#17161c; border-radius:8px; padding:8px 11px; font-size:12.5px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif">{{ mCodeToggleTxt }}</button></span>
-          <span style="font-size:12.5px; font-weight:400; color:#5c5a64">Le code est communiqué par le bureau en début de saison. Membres du bureau : votre mot de passe admin fonctionne aussi et ouvre les deux espaces.</span>
-        </label>
+        <sc-if value="{{ mLogReinit }}" hint-placeholder-val="{{ false }}">
+          <div style="font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:19px">Votre nouveau code personnel</div>
+          <label style="display:grid; gap:7px; font-size:13px; font-weight:700">Nouveau code (6 caractères minimum)
+            <input type="{{ mCodeType }}" autocomplete="new-password" value="{{ mNew }}" onChange="{{ onMNew }}" style="border:1px solid #d9d6cf; border-radius:10px; padding:12px 14px; font-size:15px; font-family:'DM Sans',sans-serif">
+          </label>
+          <label style="display:grid; gap:7px; font-size:13px; font-weight:700">Le même, une seconde fois
+            <input type="{{ mCodeType }}" autocomplete="new-password" value="{{ mNew2 }}" onChange="{{ onMNew2 }}" style="border:1px solid #d9d6cf; border-radius:10px; padding:12px 14px; font-size:15px; font-family:'DM Sans',sans-serif">
+          </label>
+        </sc-if>
         <sc-if value="{{ hasMErr }}" hint-placeholder-val="{{ false }}">
           <div style="font-size:13.5px; color:#c0162b; font-weight:600">{{ mErr }}</div>
         </sc-if>
-        <button type="submit" style="background:#e3106e; color:#fff; border:0; padding:13px 20px; border-radius:999px; font-size:15px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif">Entrer</button>
+        <button type="submit" style="background:#e3106e; color:#fff; border:0; padding:13px 20px; border-radius:999px; font-size:15px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif">{{ mBtn }}</button>
+        <sc-if value="{{ mLogNormal }}" hint-placeholder-val="{{ true }}">
+          <sc-if value="{{ mMailShow }}" hint-placeholder-val="{{ false }}"><a href="#" onClick="{{ mOubliOpen }}" style="font-size:13.5px; color:#17161c; text-align:center; text-decoration:underline; font-weight:600">Code oublié ?</a></sc-if>
+        </sc-if>
+        <sc-if value="{{ mLogOubli }}" hint-placeholder-val="{{ false }}">
+          <a href="#" onClick="{{ mLogBack }}" style="font-size:13.5px; color:#17161c; text-align:center; text-decoration:underline; font-weight:600">← Retour à la connexion</a>
+        </sc-if>
         <sc-if value="{{ mDemoShow }}" hint-placeholder-val="{{ false }}"><div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#8b8893; text-align:center">Prototype · code actuel : {{ mDemoCode }}</div></sc-if>
         <a href="#" onClick="{{ nav.accueil }}" style="font-size:13.5px; color:#5c5a64; text-align:center">← Retour au site</a>
       </form>
@@ -3066,7 +3092,7 @@
                     <div><div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.1em; color:#8b8893; margin-bottom:7px">NOM</div><input type="text" value="{{ acct.name }}" onChange="{{ acctSet.name }}" placeholder="Prénom Nom" style="width:100%; box-sizing:border-box; border:1px solid #d9d6cf; border-radius:10px; padding:11px 13px; font-size:14.5px"></div>
                     <div><div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.1em; color:#8b8893; margin-bottom:7px">FONCTION</div><input type="text" value="{{ acct.role }}" onChange="{{ acctSet.role }}" placeholder="ex. Secrétaire" style="width:100%; box-sizing:border-box; border:1px solid #d9d6cf; border-radius:10px; padding:11px 13px; font-size:14.5px"></div>
                     <div><div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.1em; color:#8b8893; margin-bottom:7px">IDENTIFIANT DE CONNEXION</div><input type="text" value="{{ acct.login }}" onChange="{{ acctSet.login }}" placeholder="ex. mfourniere" style="width:100%; box-sizing:border-box; border:1px solid #d9d6cf; border-radius:10px; padding:11px 13px; font-size:14.5px; font-family:'JetBrains Mono',monospace"></div>
-                    <div><div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.1em; color:#8b8893; margin-bottom:7px">ADRESSE E-MAIL (POUR SE CONNECTER AUSSI AVEC)</div><input type="email" value="{{ acct.email }}" onChange="{{ acctSet.email }}" placeholder="facultatif" style="width:100%; box-sizing:border-box; border:1px solid #d9d6cf; border-radius:10px; padding:11px 13px; font-size:14.5px; font-family:'JetBrains Mono',monospace"></div>
+                    <div><div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.1em; color:#8b8893; margin-bottom:7px">ADRESSE E-MAIL (POUR SE CONNECTER AUSSI AVEC)</div><input type="email" value="{{ acct.email }}" onChange="{{ acctSet.email }}" placeholder="{{ acctMailPh }}" style="width:100%; box-sizing:border-box; border:1px solid #d9d6cf; border-radius:10px; padding:11px 13px; font-size:14.5px; font-family:'JetBrains Mono',monospace"><sc-if value="{{ acctMailNoteShow }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px; line-height:1.4; color:#5c5a64; margin-top:6px">{{ acctMailNote }}</div></sc-if></div>
                   </div>
                   <div style="border:1px solid #e3e1db; border-radius:14px; padding:16px; background:#faf9f7">
                     <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.1em; color:#8b8893; margin-bottom:7px">MOT DE PASSE</div>
@@ -3103,6 +3129,12 @@
               </sc-if>
               <sc-if value="{{ acctSaved }}" hint-placeholder-val="{{ false }}">
                 <div style="background:#e7f0c9; border-radius:12px; padding:12px 16px; font-size:14px; color:#2f5a1f; font-weight:600">{{ acctSaved }}</div>
+              </sc-if>
+              <sc-if value="{{ acctFillShow }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; background:#fff8d6; border:1px solid #f0dc7a; border-radius:12px; padding:12px 16px">
+                  <span style="flex:1 1 260px; font-size:14px; line-height:1.45">Des comptes n’ont pas d’adresse e-mail. Elle sert à recevoir le lien « Mot de passe oublié ».</span>
+                  <a href="#" onClick="{{ acctFill }}" style="background:#17161c; color:#fff; padding:10px 18px; border-radius:999px; font-size:13.5px; font-weight:700">{{ acctFillTxt }}</a>
+                </div>
               </sc-if>
               <div style="border:1px solid #e3e1db; border-radius:14px; background:#fbf8f1; overflow:hidden">
                 <div style="display:flex; gap:10px 14px; padding:12px 16px; background:#f1efe9; font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.08em; color:#6d6b74; flex-wrap:wrap">
@@ -4789,6 +4821,7 @@ class Component extends DCLogic {
 
   componentDidMount() {
     try { if (/^#(inscription|fiche)/i.test(location.hash || '')) this.setState({ view: 'site', page: 'fiche' }); } catch (e) {}
+    try { const mt = (location.hash || '').match(/^#mreinit=([A-Za-z0-9_.-]+)/); if (mt) { this.setState({ view: 'mlogin', mLogMode: 'reinit', mReinitTok: mt[1], mOkMsg: '' }); history.replaceState(null, '', location.pathname + location.search); } } catch (e) {}
     try { const rt = (location.hash || '').match(/^#reinit=([A-Za-z0-9_.-]+)/); if (rt) { this.setState({ view: 'login', logMode: 'reinit', reinitTok: rt[1], logOkMsg: '' }); history.replaceState(null, '', location.pathname + location.search); } } catch (e) {}
     try { const a = (location.hash || '').match(/^#apercu=([a-z]+)(?:\/([a-z]+))?(?:\/([a-z]+))?/i); if (a) { const v = a[1], p = a[2], q = a[3];
       if (v === 'site') this.setState({ view: 'site', page: p || 'accueil' });
@@ -4942,6 +4975,7 @@ class Component extends DCLogic {
     const relCx = memMode ? null : cotCtx(st);
     const cotOf = (mm) => rowsOf('cotisations').filter(r => norm(r.cells[ci('MEMBRE')]) === norm(mm.name)).map(r => ({ saison: r.cells[ci('SAISON')], du: num(r.cells[ci('MONTANT DÛ')]), rg: num(r.cells[ci('RÉGLÉ')]), mode: r.cells[ci('MODE')] }));
     const cot = !m ? [] : memMode ? (((st.moi || {}).cot) || []) : cotOf(m);
+    if (!memMode) this._memMails = members; // adresses des fiches membres, pour les comptes du bureau sans adresse
     if (!memMode && srvOn() && srvCode() && !st.apercuAdmin && !st.apercu) this.srvAnnuaire(members.map(x => ({ id: x.id, prenom: x.prenom, nom: x.nom, ens: x.ens, pup: x.pup, byEns: x.byEns || {}, depuis: x.depuis || '', email: x.email || '', tel: x.tel || '', statut: x.statut || '', cot: cotOf(x), rel: cotReleve(st, relCx, relCx.partsOf(x.name)).rows })));
     const cotRows = cot.map(r => {
       const c = [], du = r.du, rg = r.rg, reste = Math.max(du - rg, 0); c[ci('SAISON')] = r.saison; c[ci('MODE')] = r.mode;
@@ -5007,8 +5041,33 @@ class Component extends DCLogic {
       onMCode: (e) => this.setState({ mCode: e.target.value, mErr: '' }),
       mCodeType: st.mCodeShow ? 'text' : 'password', mCodeToggleTxt: st.mCodeShow ? 'Masquer' : 'Afficher', mCodeToggle: (e) => { if (e) { e.preventDefault(); e.stopPropagation(); } this.setState({ mCodeShow: !st.mCodeShow }); },
       mDemoCode: esp.code,
+      mLogNormal: !st.mLogMode, mLogOubli: st.mLogMode === 'oubli', mLogReinit: st.mLogMode === 'reinit', mShowIdent: st.mLogMode !== 'reinit', mOkMsg: st.mOkMsg || '',
+      mBtn: st.mLogMode === 'oubli' ? (st.mBusy ? 'Envoi…' : 'Recevoir le lien par e-mail') : st.mLogMode === 'reinit' ? 'Enregistrer mon code' : 'Entrer',
+      mOubliOpen: (e) => { if (e) e.preventDefault(); this.setState({ mLogMode: 'oubli', mErr: '', mOkMsg: '' }); },
+      mLogBack: (e) => { if (e) e.preventDefault(); this.setState({ mLogMode: '', mErr: '', mOkMsg: '' }); },
+      mNew: st.mNew || '', mNew2: st.mNew2 || '', onMNew: (e) => this.setState({ mNew: e.target.value, mErr: '' }), onMNew2: (e) => this.setState({ mNew2: e.target.value, mErr: '' }),
       mSubmit: (e) => {
         if (e) e.preventDefault();
+        const mPost = (action, body) => fetch('membres.php?action=' + action, { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(srvJson).catch(() => ({ ok: false, error: 'Serveur injoignable. Vérifiez votre connexion.' }));
+        if (st.mLogMode === 'oubli') { // code oublié : lien envoyé à l'adresse de la fiche
+          const ml = String(st.mMail || '').trim();
+          if (!st.mWho && !ml) return this.setState({ mErr: 'Choisissez votre nom dans la liste ou saisissez votre adresse e-mail.' });
+          if (this._mBusy) return; this._mBusy = true; this.setState({ mBusy: true, mErr: '' });
+          mPost('oubli', { id: st.mWho || '', email: st.mWho ? '' : ml }).then(r => { this._mBusy = false;
+            if (r.ok) this.setState({ mBusy: false, mLogMode: '', mOkMsg: r.message || 'Un lien vient d’être envoyé par e-mail.' });
+            else this.setState({ mBusy: false, mErr: r.error || 'Envoi impossible. Réessayez dans un instant.' }); });
+          return;
+        }
+        if (st.mLogMode === 'reinit') { // nouveau code choisi depuis le lien reçu
+          const c1 = st.mNew || '', c2 = st.mNew2 || '';
+          if (c1.length < 6) return this.setState({ mErr: 'Le code doit faire au moins 6 caractères.' });
+          if (c1 !== c2) return this.setState({ mErr: 'Les deux codes ne sont pas identiques.' });
+          if (this._mBusy) return; this._mBusy = true;
+          mPost('reinit', { jeton: st.mReinitTok || '', code: c1 }).then(r => { this._mBusy = false;
+            if (r.ok) { this.mNoms(); this.setState({ mLogMode: '', mReinitTok: '', mNew: '', mNew2: '', mCode: '', mMail: '', mWho: r.id || '', mErr: '', mOkMsg: 'Votre code personnel est enregistré. Entrez avec lui.' }); }
+            else this.setState({ mErr: r.error || 'Enregistrement impossible. Réessayez.' }); });
+          return;
+        }
         const mail0 = String(st.mMail || '').trim();
         if (srvOn() && !st.mWho && mail0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail0)) return this.setState({ mErr: 'Adresse e-mail invalide.' });
         if (!st.mWho && !(srvOn() && mail0)) return this.setState({ mErr: srvOn() ? 'Choisissez votre nom dans la liste ou saisissez votre adresse e-mail.' : 'Choisissez votre nom dans la liste.' });
@@ -5429,7 +5488,10 @@ class Component extends DCLogic {
     const blank = { name: '', role: '', login: '', email: '', pwd: '', pwd2: '', active: true, access: ['actus'] };
     const a = st.acct || blank;
     const setA = (k) => (e) => { const v = e.target.value; this.setState(s => ({ acct: { ...(s.acct || blank), [k]: v }, acctError: '' })); };
-    const openAcct = (u) => (e) => { if (e) { e.preventDefault(); e.stopPropagation(); } window.scrollTo(0, 0); this.setState({ acctEdit: u ? u.id : 'new', acct: u ? { ...u, pwd: '', pwd2: '' } : { ...blank }, acctError: '', acctSaved: '' }); };
+    // Adresse e-mail de la fiche membre de la même personne (accents et majuscules ignorés).
+    const nzM = (x) => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+    const memMailOf = (name) => { const l = Array.from(new Set((this._memMails || []).filter(x => nzM(x.name || ((x.prenom || '') + ' ' + (x.nom || ''))) === nzM(name) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(x.email || '').trim())).map(x => String(x.email).trim().toLowerCase()))); return l.length === 1 ? l[0] : ''; };
+    const openAcct = (u) => (e) => { if (e) { e.preventDefault(); e.stopPropagation(); } window.scrollTo(0, 0); this.setState({ acctEdit: u ? u.id : 'new', acct: u ? { ...u, pwd: '', pwd2: '', email: u.email || memMailOf(u.name) } : { ...blank }, acctError: '', acctSaved: '' }); };
     const droitsVals = {
       isDroits: false,
       accountRows: accounts.map(u => ({
@@ -5441,6 +5503,16 @@ class Component extends DCLogic {
         del: (e) => { if (e) { e.preventDefault(); e.stopPropagation(); } this.setState({ confirm: { key: 'compte', id: u.id, label: u.name } }); }
       })),
       acctOpen: !!st.acctEdit, acct: a,
+      acctFillShow: accounts.some(u => !u.email && memMailOf(u.name)),
+      acctFillTxt: (() => { const n = accounts.filter(u => !u.email && memMailOf(u.name)).length; return 'Compléter ' + (n > 1 ? 'les ' + n + ' adresses e-mail manquantes' : 'l’adresse e-mail manquante') + ' depuis les fiches membres'; })(),
+      acctFill: (e) => { if (e) e.preventDefault(); let n = 0; const list = accounts.map(u => { const m2 = !u.email && memMailOf(u.name); if (!m2) return u; n++; return { ...u, email: m2 }; }); if (n) saveAccounts(list, { acctSaved: n + (n > 1 ? ' adresses e-mail complétées' : ' adresse e-mail complétée') + ' depuis les fiches membres.' }); },
+      ...(() => { // adresse utilisée pour « Mot de passe oublié » quand le compte n'a pas d'adresse : celle de la fiche membre
+        const nz = (x) => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+        const l = (this._memMails || []).filter(x => nz(x.name || ((x.prenom || '') + ' ' + (x.nom || ''))) === nz(a.name) && /@/.test(x.email || ''));
+        const fm = l.length === 1 ? String(l[0].email).trim() : '';
+        return { acctMailPh: fm ? 'vide : ' + fm + ' (fiche membre)' : 'facultatif',
+          acctMailNote: String(a.email || '').trim() ? '' : fm ? 'Laissée vide, l’adresse de la fiche membre (' + fm + ') sert pour « Mot de passe oublié ».' : (a.name ? 'Aucune adresse dans la fiche membre de ' + a.name + ' : ajoutez-en une pour pouvoir utiliser « Mot de passe oublié ».' : ''),
+          acctMailNoteShow: !String(a.email || '').trim() && !!a.name }; })(),
       acctTitle: st.acctEdit === 'new' ? 'Nouveau compte' : 'Modifier le compte de ' + (a.name || ''),
       acctSaveLabel: st.acctEdit === 'new' ? 'Créer le compte' : 'Enregistrer',
       pwdHint: st.acctEdit === 'new' ? 'Au moins 6 caractères. Transmettez-le à la personne, qui pourra le changer.' : 'Laissez vide pour garder le mot de passe actuel. Au moins 6 caractères.',
