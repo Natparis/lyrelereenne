@@ -25,7 +25,7 @@ $codeOk = function () use ($cfg) {
 };
 
 $part = isset($_GET['part']) ? $_GET['part'] : '';
-if (!in_array($part, ['public', 'prive', 'noms', 'membres', 'inscription', 'inscriptions'], true)) out(400, ['ok' => false, 'error' => 'Partie inconnue.']);
+if (!in_array($part, ['public', 'prive', 'noms', 'membres', 'inscription', 'inscriptions', 'login'], true)) out(400, ['ok' => false, 'error' => 'Partie inconnue.']);
 $dir = __DIR__ . '/donnees-lyre';
 if (!is_dir($dir)) @mkdir($dir, 0750, true);
 $GARDE = "<?php http_response_code(403); exit; ?>\n";
@@ -84,6 +84,27 @@ if ($part === 'public' || $part === 'prive') {
     $v = ecrire($part, $body['data']);
     out(200, ['ok' => true, 'at' => filemtime(fichier($part)), 'v' => $v]);
   }
+}
+
+// ---------- Connexion à l'administration (fonctionne sur tout appareil) ----------
+// Mot de passe du compte (enregistré sur le serveur) ou, en secours, le code du serveur.
+// Réponse : le code du serveur, pour que ce navigateur enregistre directement sur OVH.
+if ($part === 'login') {
+  if ($M !== 'POST') out(405, ['ok' => false, 'error' => 'Méthode non prise en charge.']);
+  $ip = 'L' . md5(($_SERVER['REMOTE_ADDR'] ?? '') . 'lyre'); $lim = lire('limites'); $now = time();
+  $essais = array_values(array_filter((array)($lim[$ip] ?? []), function ($t) use ($now) { return $t > $now - 3600; }));
+  if (count($essais) >= 20) out(429, ['ok' => false, 'error' => 'Trop d’essais. Réessayez dans une heure.']);
+  $b = corps(); $login = norm($b['login'] ?? ''); $pwd = (string)($b['pwd'] ?? '');
+  $real = (string)($cfg['code_bureau'] ?? '');
+  if ($real === '' || strpos($real, 'CHANGEZ-MOI') === 0) out(500, ['ok' => false, 'error' => 'Code du serveur non réglé dans config-site.php.']);
+  $prive = lire('prive'); $accts = is_array($prive['accounts'] ?? null) ? $prive['accounts'] : [];
+  $acct = null; foreach ($accts as $a) if (norm($a['login'] ?? '') === $login) $acct = $a;
+  $parCode = $pwd !== '' && hash_equals($real, $pwd);
+  $parMdp = $acct && (string)($acct['pwd'] ?? '') !== '' && hash_equals((string)$acct['pwd'], $pwd);
+  if (!$parCode && !$parMdp) { $essais[] = $now; $lim[$ip] = $essais; ecrire('limites', $lim, false); sleep(1);
+    out(401, ['ok' => false, 'connu' => count($accts) > 0, 'error' => 'Identifiant ou mot de passe incorrect.']); }
+  if ($parMdp && empty($acct['active'])) out(403, ['ok' => false, 'error' => 'Ce compte est désactivé. Contactez le président.']);
+  out(200, ['ok' => true, 'code' => $real, 'accounts' => $accts, 'acct' => $acct ? (string)$acct['id'] : '', 'parCode' => $parCode]);
 }
 
 // ---------- Liste des noms pour se connecter à l'espace membres ----------

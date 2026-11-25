@@ -47,6 +47,9 @@ Enregistrement des données sur le serveur (pas de base de données à créer)
   automatiquement, y compris après la fermeture et la réouverture de la page.
 - L'espace membres (documents, partitions, sondages), les comptes du bureau et le
   journal des connexions sont aussi enregistrés sur le serveur.
+- Connexion à l'administration : vérifiée par le serveur, depuis n'importe quel appareil.
+  Mot de passe oublié : saisir son identifiant et, à la place du mot de passe, le code
+  du serveur (code_bureau du fichier config-site.php).
 - Espace membres : les membres se connectent depuis n'importe quel appareil. Leurs
   réponses aux sondages, covoiturages, photos, mots de passe et modifications de
   profil sont enregistrés directement sur le serveur (mots de passe chiffrés).

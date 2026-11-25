@@ -1033,6 +1033,7 @@
         <label style="display:grid; gap:7px; font-size:13px; font-weight:700">Mot de passe
           <input type="password" autocomplete="current-password" value="{{ pwd }}" onChange="{{ onPwd }}" style="border:1px solid #d9d6cf; border-radius:10px; padding:12px 14px; font-size:15px; font-family:'DM Sans',sans-serif">
         </label>
+        <div style="font-size:12.5px; color:#5c5a64; line-height:1.45; margin-top:-8px">Mot de passe oublié ? Saisissez votre identifiant et, à la place du mot de passe, le code du serveur (fichier config-site.php sur OVH).</div>
         <sc-if value="{{ pwdError }}" hint-placeholder-val="{{ false }}">
           <div style="font-size:13.5px; color:#c0162b; font-weight:600">{{ loginError }}</div>
         </sc-if>
@@ -4517,7 +4518,7 @@ class Component extends DCLogic {
       isMLogin: st.view === 'mlogin',
       isMembres: st.view === 'membres' && !!m,
       mWho: st.mWho || '', mCode: st.mCode || '', mErr: st.mErr || '', hasMErr: !!st.mErr,
-      mWhoOpts: [{ v: '', t: 'Choisissez votre nom' }].concat((remote ? (() => { if (!this._namesAsked) { this._namesAsked = true; srvGet('noms').then(r => this.setState({ memNames: (r && r.noms) || [] })).catch(() => this.setState({ memNames: [] })); } return st.memNames || []; })() : members).map(x => ({ v: x.id, t: x.name }))),
+      mWhoOpts: [{ v: '', t: 'Choisissez votre nom' }].concat((remote ? (() => { if (!this._namesAsked) { this._namesAsked = true; srvGet('noms').then(r => { const l = (r && r.noms) || []; this.setState({ memNames: l, ...(l.length ? {} : { mErr: "L'espace membres n'est pas encore prêt : un membre du bureau doit d'abord se connecter à l'administration." }) }); }).catch(() => this.setState({ memNames: [] })); } return st.memNames || []; })() : members).map(x => ({ v: x.id, t: x.name }))),
       onMWho: (e) => this.setState({ mWho: e.target.value, mErr: '' }),
       onMCode: (e) => this.setState({ mCode: e.target.value, mErr: '' }),
       mDemoCode: esp.code,
@@ -6165,17 +6166,42 @@ class Component extends DCLogic {
       onLoginId: (e) => this.setState({ loginId: e.target.value, pwdError: false }),
       submitLogin: (e) => {
         if (e) e.preventDefault();
-        const typed = (st.loginId || '').trim().toLowerCase();
-        const u = accounts.find(x => x.login === typed);
+        const typed = (st.loginId || '').trim().toLowerCase(), pwd = st.pwd || '';
         const now = new Date().toISOString();
-        const logIt = (ok, result) => { const list = [{ at: now, name: u ? u.name : '', login: typed, ok, result }].concat(this.state.connLog || []); storeLog(list); return list; };
-        if (!u || u.pwd !== (st.pwd || '')) { this.setState({ pwdError: true, loginError: 'Identifiant ou mot de passe incorrect.', connLog: logIt(false, u ? 'mot de passe incorrect' : 'identifiant inconnu') }); return; }
-        if (!u.active) { this.setState({ pwdError: true, loginError: 'Ce compte est désactivé. Contactez le président.', connLog: logIt(false, 'compte désactivé') }); return; }
-        const updated = accounts.map(x => x.id === u.id ? { ...x, lastLogin: now } : x);
-        storeAccounts(updated);
-        sessionStorage.setItem('lyre-admin', u.id);
-        this.setState({ view: 'admin', meId: u.id, pwd: '', pwdError: false, accounts: updated, connLog: logIt(true, 'connexion réussie') });
-        window.scrollTo(0, 0);
+        const logIt = (u, ok, result) => { const list = [{ at: now, name: u ? u.name : '', login: typed, ok, result }].concat(this.state.connLog || []); storeLog(list); return list; };
+        const finish = (list, u, how) => {
+          const updated = list.map(x => x.id === u.id ? { ...x, lastLogin: now } : x);
+          storeAccounts(updated);
+          sessionStorage.setItem('lyre-admin', u.id);
+          this.setState({ view: 'admin', meId: u.id, pwd: '', pwdError: false, accounts: updated, connLog: logIt(u, true, how) });
+          window.scrollTo(0, 0);
+        };
+        // Vérification avec les comptes gardés dans ce navigateur (aperçu, ou serveur pas encore prêt).
+        const local = (msg) => {
+          const u = accounts.find(x => x.login === typed);
+          if (!u || u.pwd !== pwd) { this.setState({ pwdError: true, loginError: msg || 'Identifiant ou mot de passe incorrect. Mot de passe oublié : saisissez votre identifiant et le code du serveur.', connLog: logIt(u, false, u ? 'mot de passe incorrect' : 'identifiant inconnu') }); return; }
+          if (!u.active) { this.setState({ pwdError: true, loginError: 'Ce compte est désactivé. Contactez le président.', connLog: logIt(u, false, 'compte désactivé') }); return; }
+          finish(accounts, u, 'connexion réussie');
+        };
+        if (!srvOn()) return local();
+        this.setState({ pwdError: false });
+        // En ligne : le serveur vérifie le mot de passe (valable sur tous les appareils) ou le code du serveur.
+        srvPost('login', { login: typed, pwd }).then(r => {
+          if (r.ok) {
+            srvSetCode(r.code);
+            const list = Array.isArray(r.accounts) && r.accounts.length ? r.accounts : accounts;
+            let u = list.find(x => x.id === r.acct) || list.find(x => x.login === typed);
+            if (!u && r.parCode) u = list.find(x => x.active && (x.access || []).length >= SECTION_IDS.length) || list.find(x => x.active);
+            if (!u) return local();
+            finish(list, u, r.parCode ? 'connexion avec le code du serveur' : 'connexion réussie');
+            this.srvLoad(r.code);
+            return;
+          }
+          if (r.status === 403) return this.setState({ pwdError: true, loginError: r.error, connLog: logIt(null, false, 'compte désactivé') });
+          if (r.status === 429) return this.setState({ pwdError: true, loginError: r.error });
+          if (r.status === 401 && r.connu) return this.setState({ pwdError: true, loginError: 'Identifiant ou mot de passe incorrect. Mot de passe oublié : saisissez votre identifiant et le code du serveur.', connLog: logIt(null, false, 'mot de passe incorrect') });
+          local(); // le serveur ne connaît pas encore les comptes
+        }).catch(() => local());
       },
       logout: (e) => { if (e) e.preventDefault(); sessionStorage.removeItem('lyre-admin'); sessionStorage.removeItem('lyre-membre'); sessionStorage.removeItem('lyre-membre-code'); this.setState({ view: 'site', page: 'accueil', meId: null, memId: null }); window.scrollTo(0, 0); },
       goAdmin: (e) => { if (e) e.preventDefault(); this.setState({ view: accounts.some(x => x.id === st.meId && x.active) ? 'admin' : 'login', pwd: '', pwdError: false }); window.scrollTo(0, 0); },
