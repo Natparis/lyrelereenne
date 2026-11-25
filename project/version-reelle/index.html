@@ -4328,7 +4328,7 @@ const syncCross = (s, k, d) => {
   }
   return { tableEdits: te, tableExtra: tx };
 };
-const loadSaved = () => { try { return JSON.parse(localStorage.getItem('lyre-donnees')) || {}; } catch (e) { return {}; } };
+const loadSaved = () => { try { const v = JSON.parse(localStorage.getItem('lyre-donnees')) || {}; if (v && v.__idb) { localStorage.removeItem('lyre-donnees'); return {}; } return v; } catch (e) { return {}; } };
 
 const DMOIS = [['JANV', 'janvier', 1], ['FÉVR', 'février', 1], ['MARS', 'mars', 0], ['AVR', 'avril', 1], ['MAI', 'mai', 0], ['JUIN', 'juin', 0], ['JUIL', 'juillet', 1], ['AOÛT', 'août', 0], ['SEPT', 'septembre', 1], ['OCT', 'octobre', 1], ['NOV', 'novembre', 1], ['DÉC', 'décembre', 1]];
 const dNorm = (w) => String(w || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f.]/g, '');
@@ -4713,10 +4713,10 @@ class Component extends DCLogic {
         parts.forEach(([p, key], i) => { const remote = srvNorm(rs[i].data), mem = this._srvBase && this._srvBase[p], st = srvBaseGet(p), b = mem ? mem.data : (st && st.data);
           if (Object.keys(remote).length) vide = false;
           // serveur vide pour cette partie : on envoie ce que cet ordinateur contient ; espace membres sans repère : on réunit les deux
-          merged[key] = !Object.keys(remote).length ? loc[key] : b ? srvMerge3(b, loc[key], remote) : (dirty || p === 'membres') ? srvMerge3({}, loc[key], remote) : remote;
+          merged[key] = !Object.keys(remote).length ? (this._localVide ? remote : loc[key]) : this._localVide ? remote : b ? srvMerge3(b, loc[key], remote) : (dirty || p === 'membres') ? srvMerge3({}, loc[key], remote) : remote;
           base[p] = { rev: rs[i].rev || '', data: remote }; srvBaseSet(p, rs[i].rev || '', remote);
           if (!srvEq(merged[key], remote)) toSend = true; });
-        this._srvCode = auth; this._srvBase = base;
+        this._srvCode = auth; this._srvBase = base; this._localVide = false;
         const now = srvSplit(this.srvOut()); this.srvApply(srvJoin(merged.pub || now.pub, merged.priv || now.priv, merged.mem || now.mem));
         this._srvLoaded = true; this._srvAt = Date.now(); if (role === 'b') { this.srvComptesInit(); setTimeout(() => this.srvFiles(), 1500); setTimeout(() => this.srvPhotos(), 2500); }
         if (toSend) { srvSetDirty(true); this.srvStatus(vide ? 'Serveur vide : envoi des données de cet ordinateur vers le serveur…' : 'Envoi au serveur des saisies faites sur cet ordinateur…', false, true); setTimeout(() => this.srvSend(), 50); }
@@ -4832,6 +4832,9 @@ class Component extends DCLogic {
       const saved = loadSaved();
       const patch = {};
       PERSIST_KEYS.forEach(k => { if (saved[k] !== undefined && saved[k] !== null && typeof saved[k] === typeof this.state[k]) patch[k] = saved[k]; });
+      // Aucune donnée gardée sur cet ordinateur (stockage plein, vidé…) : au chargement, le serveur fait foi.
+      // Sans cette sécurité, l'absence de données locales serait prise pour des suppressions et envoyée au serveur.
+      this._localVide = !Object.keys(patch).length;
       this._restored = true;
       { const seed = {}; PERSIST_KEYS.forEach(k => { seed[k] = patch[k] !== undefined ? patch[k] : this.state[k]; }); this._srvSeed = JSON.stringify(seed); }
       if (Object.keys(patch).length) this.setState(patch);
@@ -4902,6 +4905,10 @@ class Component extends DCLogic {
           if (x.ens.indexOf(ens) === -1) x.ens = x.ens.concat([ens]);
           const v = splitV(r.cells[pc.indexOf(col)]); x.byEns[ens] = (x.byEns[ens] || []).concat(v);
           v.forEach(p => { if (x.pup.indexOf(p) === -1) x.pup = x.pup.concat([p]); }); }); });
+      // adresse e-mail absente de la fiche « Membres asso » : reprise des listes École, Chorale, Harmonie ou Professeurs (même prénom et nom)
+      ['chorale', 'harmonie', 'eleves', 'profs'].forEach(k => { const pc = PANELS[k].columns, ie = pc.indexOf('EMAIL'); if (ie < 0) return;
+        rowsOf(k).forEach(r => { const x = idx[nzE(r.cells[pc.indexOf('PRÉNOM')] + ' ' + r.cells[pc.indexOf('NOM')])], em = String(r.cells[ie] || '').trim();
+          if (x && !String(x.email || '').trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) x.email = em; }); });
     })();
     // Membre connecté sans compte du bureau : la liste vient du serveur (noms, ensembles, pupitres), ses coordonnées de sa propre fiche.
     const memMode = srvOn() && !srvCode() && Array.isArray(st.annuaire);
