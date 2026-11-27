@@ -73,6 +73,15 @@
   .sessions .dur { color: var(--muted); margin-left: auto; margin-right: 10px; }
   .sessions .del { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 16px; line-height: 1; padding: 2px 6px; border-radius: 6px; }
   .sessions .del:hover { color: var(--stop); background: var(--gold-soft); }
+  .add-link { margin-top: 12px; border: 0; background: none; color: var(--gold); font: 500 13px Inter, sans-serif; cursor: pointer; padding: 4px 0; }
+  .add-link:hover { text-decoration: underline; }
+  .add-form { margin-top: 12px; padding: 14px; border-radius: 14px; background: var(--gold-soft); display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+  .add-form[hidden] { display: none; }
+  .add-form label { display: flex; flex-direction: column; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; gap: 4px; }
+  .add-form input { font: 500 16px Inter, sans-serif; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+  .add-form .ghost { background: var(--card); }
+  .add-form .primary { border: 0; background: var(--ink); color: var(--bg); border-radius: 10px; padding: 9px 16px; font: 600 13px Inter, sans-serif; cursor: pointer; }
+  .daybar button:disabled { opacity: .25; cursor: default; background: transparent; }
   .empty { color: var(--muted); font-size: 13px; padding: 10px 0 0; font-style: italic; }
 
   .summary { margin-top: 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; padding: 0; overflow: hidden; }
@@ -125,6 +134,13 @@
       <div class="status" data-status></div>
       <button class="btn btn-start" data-toggle>Commencer</button>
       <ul class="sessions" data-list></ul>
+      <button class="add-link" data-add>+ Ajouter une plage manuellement</button>
+      <form class="add-form" data-form hidden>
+        <label>Début <input type="time" data-start value="09:00" required></label>
+        <label>Fin <input type="time" data-end value="12:30" required></label>
+        <button type="submit" class="primary">Ajouter</button>
+        <button type="button" class="ghost" data-cancel>Annuler</button>
+      </form>
     </section>
     <section class="card period" id="p-aprem">
       <div class="period-head"><span class="period-name">Après-midi</span><span class="period-icon">☾</span></div>
@@ -132,6 +148,13 @@
       <div class="status" data-status></div>
       <button class="btn btn-start" data-toggle>Commencer</button>
       <ul class="sessions" data-list></ul>
+      <button class="add-link" data-add>+ Ajouter une plage manuellement</button>
+      <form class="add-form" data-form hidden>
+        <label>Début <input type="time" data-start value="14:00" required></label>
+        <label>Fin <input type="time" data-end value="18:00" required></label>
+        <button type="submit" class="primary">Ajouter</button>
+        <button type="button" class="ghost" data-cancel>Annuler</button>
+      </form>
     </section>
   </div>
 
@@ -217,6 +240,24 @@
     save(); render();
   }
 
+  function addManual(p, startStr, endStr) {
+    const [sh, sm] = startStr.split(':').map(Number);
+    const [eh, em] = endStr.split(':').map(Number);
+    const base = fromIso(viewDay);
+    const s = new Date(base.getFullYear(), base.getMonth(), base.getDate(), sh, sm).getTime();
+    const e = new Date(base.getFullYear(), base.getMonth(), base.getDate(), eh, em).getTime();
+    if (!(e > s)) { alert('L’heure de fin doit être après l’heure de début.'); return false; }
+    if (e > Date.now()) { alert('Cette plage se termine dans le futur.'); return false; }
+    const d = state.days[viewDay] || (state.days[viewDay] = { matin: [], aprem: [] });
+    const clash = [...d.matin, ...d.aprem].some(x => s < x.e && e > x.s);
+    if (clash && !confirm('Cette plage chevauche une plage déjà saisie ce jour-là. L’ajouter quand même ?')) return false;
+    d[p].push({ s, e });
+    d[p].sort((a, b) => a.s - b.s);
+    save(); render();
+    toast(`Plage ${startStr} → ${endStr} ajoutée`);
+    return true;
+  }
+
   function renderPeriods() {
     const r = state.running;
     const isToday = viewDay === iso(new Date());
@@ -229,10 +270,11 @@
       btn.textContent = running ? 'Arrêter' : 'Commencer';
       btn.className = 'btn ' + (running ? 'btn-stop' : 'btn-start');
       btn.disabled = !running && (!!r || !isToday);
+      btn.hidden = !isToday && !running;
       const st = root.querySelector('[data-status]');
       if (running) st.innerHTML = `<span class="dot"></span>En cours depuis ${hm(r.s)}`;
       else if (r && isToday) st.textContent = 'Arrêtez l’autre période pour démarrer celle-ci';
-      else if (!isToday) st.textContent = 'Consultation d’une journée passée';
+      else if (!isToday) st.textContent = 'Journée passée : ajoutez vos plages ci-dessous';
       else st.textContent = '';
       const list = root.querySelector('[data-list]');
       const items = day(viewDay)[id] || [];
@@ -256,6 +298,7 @@
     const m = Object.keys(state.days).concat(state.running ? [state.running.date] : [])
       .filter((k, i, a) => k.startsWith(mk) && a.indexOf(k) === i).reduce((a, k) => a + dayMs(k), 0);
     document.getElementById('sumMonth').textContent = hhmm(m);
+    document.getElementById('next').disabled = viewDay >= iso(new Date());
     document.getElementById('dayLabel').textContent = cap(d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }));
   }
 
@@ -311,12 +354,23 @@
     clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2200);
   }
 
-  function shiftDay(n) { const d = fromIso(viewDay); d.setDate(d.getDate() + n); viewDay = iso(d); viewMonth = viewDay.slice(0, 7); render(); }
+  function shiftDay(n) { const d = fromIso(viewDay); d.setDate(d.getDate() + n); if (iso(d) > iso(new Date())) return; viewDay = iso(d); viewMonth = viewDay.slice(0, 7); render(); }
   function shiftMonth(n) { const [y, m] = viewMonth.split('-').map(Number); const d = new Date(y, m - 1 + n, 1); viewMonth = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; renderHistory(); }
 
   function render() { renderPeriods(); renderSummary(); renderHistory(); }
 
-  PERIODS.forEach(({ id, el }) => document.getElementById(el).querySelector('[data-toggle]').onclick = () => toggle(id));
+  PERIODS.forEach(({ id, el }) => {
+    const root = document.getElementById(el);
+    root.querySelector('[data-toggle]').onclick = () => toggle(id);
+    const form = root.querySelector('[data-form]');
+    const link = root.querySelector('[data-add]');
+    link.onclick = () => { form.hidden = false; link.hidden = true; form.querySelector('[data-start]').focus(); };
+    root.querySelector('[data-cancel]').onclick = () => { form.hidden = true; link.hidden = false; };
+    form.onsubmit = ev => {
+      ev.preventDefault();
+      if (addManual(id, form.querySelector('[data-start]').value, form.querySelector('[data-end]').value)) { form.hidden = true; link.hidden = false; }
+    };
+  });
   document.getElementById('prev').onclick = () => shiftDay(-1);
   document.getElementById('next').onclick = () => shiftDay(1);
   document.getElementById('mPrev').onclick = () => shiftMonth(-1);
