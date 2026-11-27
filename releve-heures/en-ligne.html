@@ -1,0 +1,559 @@
+<title>Relevé d'heures LVMH</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* Mise en page : une colonne étroite, deux cartes de période côte à côte (empilées sur téléphone), totaux puis tableau du mois. */
+  :root {
+    --bg: #f6f2ec; --card: #fffdf9; --ink: #1d1a17; --muted: #81786e;
+    --line: #e7dfd4; --gold: #9c7a45; --gold-soft: #f1e8da;
+    --run: #2f6f57; --stop: #9b3b32; --on-stop: #ffffff;
+    --shadow: 0 1px 2px rgba(40,30,20,.04), 0 8px 30px rgba(40,30,20,.06);
+    --display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+    --text: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15130f; --card: #1e1b17; --ink: #f2ece3; --muted: #a39a8f;
+      --line: #322d27; --gold: #cfaa6e; --gold-soft: #2c261d;
+      --run: #6cc39d; --stop: #c9584c; --on-stop: #ffffff;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 30px rgba(0,0,0,.25);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15130f; --card: #1e1b17; --ink: #f2ece3; --muted: #a39a8f;
+    --line: #322d27; --gold: #cfaa6e; --gold-soft: #2c261d;
+    --run: #6cc39d; --stop: #c9584c; --on-stop: #ffffff;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 30px rgba(0,0,0,.25);
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--text); font-size: 15px; line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 880px; margin: 0 auto;
+    padding-block: 28px 64px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+  header { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }
+  .eyebrow { font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--gold); font-weight: 600; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .sync { letter-spacing: .04em; text-transform: none; font-weight: 500; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+  .sync::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+  .sync.ok::before { background: var(--run); }
+  .sync.warn::before { background: var(--stop); }
+  h1 { font-family: var(--display); font-weight: 600; font-size: 40px; line-height: 1.1; margin: 4px 0 0; text-wrap: balance; }
+  .client { font-family: var(--display); font-size: 22px; color: var(--muted); }
+
+  .daybar { display: flex; align-items: center; gap: 4px; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 4px; box-shadow: var(--shadow); }
+  .daybar button { border: 0; background: transparent; color: var(--ink); width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 18px; }
+  .daybar button:hover:not(:disabled) { background: var(--gold-soft); }
+  .daybar button:disabled { opacity: .25; cursor: default; }
+  .daybar .label { min-width: 170px; text-align: center; font-weight: 500; font-size: 14px; }
+
+  .periods { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 640px) {
+    .periods { grid-template-columns: 1fr; }
+    h1 { font-size: 32px; }
+    header { align-items: stretch; }
+    .daybar { width: 100%; justify-content: space-between; }
+  }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 22px; box-shadow: var(--shadow); min-width: 0; }
+  .period { transition: border-color .3s; }
+  .period.running { border-color: var(--run); }
+  .period-head { display: flex; justify-content: space-between; align-items: center; }
+  .period-name { font-family: var(--display); font-size: 26px; font-weight: 600; }
+  .period-icon { font-size: 22px; opacity: .8; }
+  .timer { font-variant-numeric: tabular-nums; font-size: 44px; font-weight: 500; letter-spacing: -.02em; margin: 10px 0 2px; }
+  .status { font-size: 13px; color: var(--muted); min-height: 20px; }
+  .status .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--run); margin-right: 6px; animation: pulse 1.6s infinite; }
+  @keyframes pulse { 50% { opacity: .25; } }
+
+  .btn { margin-top: 16px; width: 100%; border: 0; border-radius: 14px; padding: 18px; font: 600 16px var(--text); cursor: pointer; transition: transform .1s, filter .2s; letter-spacing: .02em; }
+  .btn:active { transform: scale(.98); }
+  .btn-start { background: var(--ink); color: var(--bg); }
+  .btn-start:hover:not(:disabled) { filter: brightness(1.15); }
+  .btn-stop { background: var(--stop); color: var(--on-stop); }
+  .btn-stop:hover { filter: brightness(1.08); }
+  .btn:disabled { opacity: .35; cursor: not-allowed; }
+
+  .sessions { list-style: none; padding: 0; margin: 16px 0 0; border-top: 1px solid var(--line); }
+  .sessions li { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px dashed var(--line); font-size: 14px; font-variant-numeric: tabular-nums; min-height: 44px; }
+  .sessions li:last-child { border-bottom: 0; }
+  .sessions .dur { color: var(--muted); margin-left: auto; }
+  .icon-btn { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 18px; line-height: 1; width: 36px; height: 36px; border-radius: 8px; }
+  .icon-btn:hover { color: var(--stop); background: var(--gold-soft); }
+  .confirm-del { margin-left: auto; display: flex; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); }
+  .mini { border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 8px; padding: 6px 10px; font: 500 13px var(--text); cursor: pointer; }
+  .mini.danger { background: var(--stop); color: var(--on-stop); border-color: var(--stop); }
+  .empty { color: var(--muted); font-size: 13px; padding: 10px 0 0; font-style: italic; }
+
+  .add-link { margin-top: 10px; border: 0; background: none; color: var(--gold); font: 500 14px var(--text); cursor: pointer; padding: 8px 0; }
+  .add-link:hover { text-decoration: underline; }
+  .add-form { margin-top: 12px; padding: 14px; border-radius: 14px; background: var(--gold-soft); display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+  .add-form label { display: flex; flex-direction: column; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; gap: 4px; }
+  .add-form input { font: 500 16px var(--text); color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+  .add-form .primary { border: 0; background: var(--ink); color: var(--bg); border-radius: 10px; padding: 10px 16px; font: 600 14px var(--text); cursor: pointer; }
+  [hidden] { display: none !important; }
+  .add-form .msg { flex-basis: 100%; font-size: 13px; color: var(--stop); }
+
+  .summary { display: grid; grid-template-columns: repeat(3, 1fr); padding: 0; overflow: hidden; }
+  .summary > div { padding: 18px 22px; border-right: 1px solid var(--line); }
+  .summary > div:last-child { border-right: 0; }
+  @media (max-width: 640px) {
+    .summary > div { padding: 14px 12px; }
+    .summary .v { font-size: 26px; }
+  }
+  .k { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .v { font-family: var(--display); font-size: 34px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  .history-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  .history h2 { font-family: var(--display); font-size: 24px; margin: 0; font-weight: 600; }
+  .actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .ghost { border: 1px solid var(--line); background: transparent; color: var(--ink); border-radius: 10px; padding: 9px 14px; font: 500 13px var(--text); cursor: pointer; }
+  .ghost:hover { border-color: var(--gold); color: var(--gold); }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+  th { text-align: left; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 8px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td { padding: 11px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  tr.clickable { cursor: pointer; }
+  tr.clickable:hover td { background: var(--gold-soft); }
+  tr.current td { font-weight: 600; }
+  td.num, th.num { text-align: right; }
+  tfoot td { font-weight: 600; border-bottom: 0; color: var(--gold); }
+  @media (max-width: 480px) { .hide-sm { display: none; } }
+
+  .toast {
+    position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%) translateY(20px); background: var(--ink); color: var(--bg);
+    padding: 10px 18px; border-radius: 999px; font-size: 13px; opacity: 0; transition: .3s; pointer-events: none; max-width: calc(100% - 32px); text-align: center;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 8px; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">Relevé d'heures <span class="sync" id="sync">Connexion…</span></div>
+      <h1>Mon temps de travail</h1>
+      <div class="client">Client · LVMH</div>
+    </div>
+    <div class="daybar">
+      <button id="prev" aria-label="Jour précédent">‹</button>
+      <div class="label" id="dayLabel"></div>
+      <button id="next" aria-label="Jour suivant">›</button>
+    </div>
+  </header>
+
+  <div class="periods">
+    <section class="card period" id="p-matin">
+      <div class="period-head"><span class="period-name">Matin</span><span class="period-icon" aria-hidden="true">☀︎</span></div>
+      <div class="timer" data-timer>0:00:00</div>
+      <div class="status" data-status></div>
+      <button class="btn btn-start" data-toggle id="toggle-matin">Commencer</button>
+      <ul class="sessions" data-list></ul>
+      <button class="add-link" data-add id="add-matin">+ Ajouter une plage manuellement</button>
+      <form class="add-form" data-form hidden>
+        <label for="start-matin">Début <input type="time" id="start-matin" data-start value="09:00" required></label>
+        <label for="end-matin">Fin <input type="time" id="end-matin" data-end value="12:30" required></label>
+        <button type="submit" class="primary">Ajouter</button>
+        <button type="button" class="ghost" data-cancel>Annuler</button>
+        <div class="msg" data-msg hidden></div>
+      </form>
+    </section>
+    <section class="card period" id="p-aprem">
+      <div class="period-head"><span class="period-name">Après-midi</span><span class="period-icon" aria-hidden="true">☾</span></div>
+      <div class="timer" data-timer>0:00:00</div>
+      <div class="status" data-status></div>
+      <button class="btn btn-start" data-toggle id="toggle-aprem">Commencer</button>
+      <ul class="sessions" data-list></ul>
+      <button class="add-link" data-add id="add-aprem">+ Ajouter une plage manuellement</button>
+      <form class="add-form" data-form hidden>
+        <label for="start-aprem">Début <input type="time" id="start-aprem" data-start value="14:00" required></label>
+        <label for="end-aprem">Fin <input type="time" id="end-aprem" data-end value="18:00" required></label>
+        <button type="submit" class="primary">Ajouter</button>
+        <button type="button" class="ghost" data-cancel>Annuler</button>
+        <div class="msg" data-msg hidden></div>
+      </form>
+    </section>
+  </div>
+
+  <section class="card summary">
+    <div><div class="k">Jour</div><div class="v" id="sumDay">0 h 00</div></div>
+    <div><div class="k">Semaine</div><div class="v" id="sumWeek">0 h 00</div></div>
+    <div><div class="k">Mois</div><div class="v" id="sumMonth">0 h 00</div></div>
+  </section>
+
+  <section class="card history">
+    <div class="history-head">
+      <h2 id="monthLabel"></h2>
+      <div class="actions">
+        <button class="ghost" id="mPrev" aria-label="Mois précédent">‹ Mois préc.</button>
+        <button class="ghost" id="mNext" aria-label="Mois suivant">Mois suiv. ›</button>
+        <button class="ghost" id="export">Exporter (CSV)</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Jour</th><th>Matin</th><th>Après-midi</th><th class="num">Total</th><th class="num hide-sm">Décimal</th></tr></thead>
+        <tbody id="rows"></tbody>
+        <tfoot><tr><td>Total du mois</td><td id="fM"></td><td id="fA"></td><td class="num" id="fT"></td><td class="num hide-sm" id="fD"></td></tr></tfoot>
+      </table>
+    </div>
+  </section>
+
+  <footer id="foot">Vos heures sont enregistrées dans votre compte et visibles uniquement par vous, sur le téléphone comme sur l'ordinateur.</footer>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(() => {
+  const KEY = 'releve-heures-lvmh-v1';
+  const PERIODS = [
+    { id: 'matin', el: 'p-matin', name: 'Matin' },
+    { id: 'aprem', el: 'p-aprem', name: 'Après-midi' },
+  ];
+
+  // État : { days: { 'YYYY-MM-DD': { matin: [{s,e}], aprem: [...] } }, running: { date, period, s } | null }
+  let state = { days: {}, running: null };
+  let db = null, uid = null, ready = false, mode = 'pending', downloads = null;
+  let pendingDelete = null;
+
+  const pad = n => String(n).padStart(2, '0');
+  const iso = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const fromIso = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+  const hm = ts => { const d = new Date(ts); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+  const clock = ms => { const t = Math.floor(ms / 1000); return `${Math.floor(t / 3600)}:${pad(Math.floor(t / 60) % 60)}:${pad(t % 60)}`; };
+  const hhmm = ms => { const m = Math.round(ms / 60000); return `${Math.floor(m / 60)} h ${pad(m % 60)}`; };
+  const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+  const dec = ms => (ms / 3600000).toFixed(2).replace('.', ',');
+  const today = () => iso(new Date());
+
+  let viewDay = today();
+  let viewMonth = viewDay.slice(0, 7);
+
+  const day = k => state.days[k] || { matin: [], aprem: [] };
+  const periodMs = (k, p) => {
+    let ms = (day(k)[p] || []).reduce((a, x) => a + (x.e - x.s), 0);
+    const r = state.running;
+    if (r && r.date === k && r.period === p) ms += Date.now() - r.s;
+    return ms;
+  };
+  const dayMs = k => periodMs(k, 'matin') + periodMs(k, 'aprem');
+
+  // ---------- Enregistrement ----------
+  function setSync(kind, text) {
+    const el = document.getElementById('sync');
+    el.className = 'sync ' + kind;
+    el.textContent = text;
+  }
+
+  let chain = Promise.resolve();
+  function persist(months, runningChanged) {
+    if (mode !== 'db') {
+      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+      return;
+    }
+    const base = 'data/users/' + uid + '/';
+    [...months].forEach(mk => {
+      const body = { days: {} };
+      Object.keys(state.days).filter(k => k.startsWith(mk)).forEach(k => { body.days[k] = state.days[k]; });
+      chain = chain.then(() => db.doc(base + mk).set(body)).catch(writeError);
+    });
+    if (runningChanged) {
+      const body = { running: state.running };
+      chain = chain.then(() => db.doc(base + 'running').set(body)).catch(writeError);
+    }
+  }
+  function writeError(e) {
+    setSync('warn', 'Non enregistré');
+    toast(e && e.code === 'quota_exceeded'
+      ? 'Espace de stockage plein : exportez puis supprimez d’anciennes plages.'
+      : 'L’enregistrement a échoué. Vérifiez la connexion puis réessayez.');
+  }
+
+  function applySnapshot(snap) {
+    const days = {}; let running = null;
+    snap.docs.forEach(doc => {
+      const v = doc.data() || {};
+      if (doc.id === 'running') running = v.running || null;
+      else if (/^\d{4}-\d{2}$/.test(doc.id) && v.days) Object.assign(days, v.days);
+    });
+    state.days = days; state.running = running;
+  }
+
+  function startLocal(reason) {
+    mode = 'local';
+    try { const raw = localStorage.getItem(KEY); if (raw) state = Object.assign({ days: {}, running: null }, JSON.parse(raw)); } catch (e) {}
+    ready = true;
+    setSync('warn', reason);
+    document.getElementById('foot').textContent = 'Vos heures sont enregistrées sur cet appareil uniquement. Pensez à exporter le CSV en fin de mois.';
+    focusRunning(); render();
+  }
+
+  function focusRunning() {
+    if (state.running) { viewDay = state.running.date; viewMonth = viewDay.slice(0, 7); }
+  }
+
+  async function boot() {
+    const use = window.claude && window.claude.use;
+    if (!use) { startLocal('Enregistré sur cet appareil'); return; }
+    const [d, u, dl] = await Promise.all([use('db'), use('user'), use('downloads')]);
+    downloads = dl;
+    if (d && u) { try { uid = await u.id(); } catch (e) { uid = null; } }
+    if (!d || !uid) { startLocal('Connectez-vous pour synchroniser'); return; }
+    db = d; mode = 'db';
+    let first = true;
+    const slow = setTimeout(() => { if (!ready) setSync('warn', 'Connexion lente…'); }, 10000);
+    db.collection('data/users/' + uid).onSnapshot(snap => {
+      applySnapshot(snap);
+      if (!snap.metadata.fromCache) {
+        clearTimeout(slow);
+        if (!ready) { ready = true; }
+        setSync('ok', 'Synchronisé');
+        if (first) { first = false; focusRunning(); }
+      }
+      render();
+    }, () => {
+      clearTimeout(slow);
+      setSync('warn', 'Synchronisation interrompue');
+    });
+  }
+
+  // ---------- Actions ----------
+  function toggle(p) {
+    if (!ready) return;
+    const now = Date.now();
+    const r = state.running;
+    if (r && r.period === p && r.date === viewDay) {
+      const d = state.days[r.date] || (state.days[r.date] = { matin: [], aprem: [] });
+      d[p] = (d[p] || []).concat([{ s: r.s, e: now }]);
+      state.running = null;
+      toast(`${PERIODS.find(x => x.id === p).name} : arrêt à ${hm(now)}`);
+      persist(new Set([r.date.slice(0, 7)]), true);
+    } else if (!r) {
+      viewDay = today(); viewMonth = viewDay.slice(0, 7);
+      state.running = { date: viewDay, period: p, s: now };
+      toast(`${PERIODS.find(x => x.id === p).name} : début à ${hm(now)}`);
+      persist(new Set(), true);
+    }
+    render();
+  }
+
+  function removeSession(p, i) {
+    const d = state.days[viewDay];
+    if (!d || !d[p]) return;
+    d[p] = d[p].filter((_, j) => j !== i);
+    pendingDelete = null;
+    persist(new Set([viewDay.slice(0, 7)]), false);
+    toast('Plage supprimée');
+    render();
+  }
+
+  function addManual(p, form) {
+    const msg = form.querySelector('[data-msg]');
+    const show = t => { msg.textContent = t; msg.hidden = false; };
+    const startStr = form.querySelector('[data-start]').value;
+    const endStr = form.querySelector('[data-end]').value;
+    if (!startStr || !endStr) { show('Indiquez une heure de début et une heure de fin.'); return false; }
+    const [sh, sm] = startStr.split(':').map(Number);
+    const [eh, em] = endStr.split(':').map(Number);
+    const b = fromIso(viewDay);
+    const s = new Date(b.getFullYear(), b.getMonth(), b.getDate(), sh, sm).getTime();
+    const e = new Date(b.getFullYear(), b.getMonth(), b.getDate(), eh, em).getTime();
+    if (!(e > s)) { show('L’heure de fin doit être après l’heure de début.'); return false; }
+    if (e > Date.now()) { show('Cette plage se termine dans le futur. Corrigez l’heure de fin.'); return false; }
+    const d = state.days[viewDay] || { matin: [], aprem: [] };
+    const clash = [...(d.matin || []), ...(d.aprem || [])].some(x => s < x.e && e > x.s);
+    if (clash && form.dataset.force !== '1') {
+      form.dataset.force = '1';
+      show('Cette plage chevauche une plage déjà saisie ce jour-là. Cliquez à nouveau sur Ajouter pour la garder quand même.');
+      return false;
+    }
+    state.days[viewDay] = d;
+    d[p] = (d[p] || []).concat([{ s, e }]).sort((a, z) => a.s - z.s);
+    persist(new Set([viewDay.slice(0, 7)]), false);
+    toast(`Plage ${startStr} → ${endStr} ajoutée`);
+    render();
+    return true;
+  }
+
+  // ---------- Affichage ----------
+  function renderPeriods() {
+    const r = state.running;
+    const isToday = viewDay === today();
+    PERIODS.forEach(({ id, el }) => {
+      const root = document.getElementById(el);
+      const running = r && r.date === viewDay && r.period === id;
+      root.classList.toggle('running', !!running);
+      root.querySelector('[data-timer]').textContent = clock(periodMs(viewDay, id));
+      const btn = root.querySelector('[data-toggle]');
+      btn.textContent = running ? 'Arrêter' : 'Commencer';
+      btn.className = 'btn ' + (running ? 'btn-stop' : 'btn-start');
+      btn.disabled = !ready || (!running && (!!r || !isToday));
+      btn.hidden = !isToday && !running;
+      const st = root.querySelector('[data-status]');
+      st.textContent = '';
+      if (running) {
+        const dot = document.createElement('span'); dot.className = 'dot';
+        st.append(dot, `En cours depuis ${hm(r.s)}`);
+      } else if (r && isToday) st.textContent = 'Arrêtez l’autre période pour démarrer celle-ci';
+      else if (!isToday) st.textContent = 'Journée passée : ajoutez vos plages ci-dessous';
+      root.querySelector('[data-add]').disabled = !ready;
+
+      const list = root.querySelector('[data-list]');
+      const items = day(viewDay)[id] || [];
+      list.textContent = '';
+      if (!items.length) {
+        const e = document.createElement('div'); e.className = 'empty'; e.textContent = 'Aucune plage enregistrée';
+        list.appendChild(e);
+      }
+      items.forEach((x, i) => {
+        const li = document.createElement('li');
+        const span = document.createElement('span'); span.textContent = `${hm(x.s)} → ${hm(x.e)}`;
+        li.appendChild(span);
+        if (pendingDelete && pendingDelete.p === id && pendingDelete.i === i && pendingDelete.day === viewDay) {
+          const box = document.createElement('span'); box.className = 'confirm-del';
+          const yes = document.createElement('button'); yes.className = 'mini danger'; yes.textContent = 'Supprimer';
+          yes.onclick = () => removeSession(id, i);
+          const no = document.createElement('button'); no.className = 'mini'; no.textContent = 'Garder';
+          no.onclick = () => { pendingDelete = null; render(); };
+          box.append(yes, no); li.appendChild(box);
+        } else {
+          const dur = document.createElement('span'); dur.className = 'dur'; dur.textContent = hhmm(x.e - x.s);
+          const del = document.createElement('button'); del.className = 'icon-btn'; del.textContent = '×';
+          del.title = 'Supprimer cette plage'; del.setAttribute('aria-label', 'Supprimer cette plage');
+          del.onclick = () => { pendingDelete = { p: id, i, day: viewDay }; render(); };
+          li.append(dur, del);
+        }
+        list.appendChild(li);
+      });
+    });
+  }
+
+  function renderSummary() {
+    document.getElementById('sumDay').textContent = hhmm(dayMs(viewDay));
+    const d = fromIso(viewDay);
+    const monday = new Date(d); monday.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    let w = 0; for (let i = 0; i < 7; i++) { const x = new Date(monday); x.setDate(monday.getDate() + i); w += dayMs(iso(x)); }
+    document.getElementById('sumWeek').textContent = hhmm(w);
+    const mk = viewDay.slice(0, 7);
+    document.getElementById('sumMonth').textContent = hhmm(monthKeys(mk).reduce((a, k) => a + dayMs(k), 0));
+    document.getElementById('next').disabled = viewDay >= today();
+    document.getElementById('dayLabel').textContent = cap(d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }));
+  }
+
+  function monthKeys(mk) {
+    const keys = new Set(Object.keys(state.days).filter(k => k.startsWith(mk)));
+    if (state.running && state.running.date.startsWith(mk)) keys.add(state.running.date);
+    return [...keys].filter(k => dayMs(k) > 0).sort();
+  }
+
+  function renderHistory() {
+    const [y, m] = viewMonth.split('-').map(Number);
+    document.getElementById('monthLabel').textContent = cap(new Date(y, m - 1, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }));
+    const tb = document.getElementById('rows');
+    tb.textContent = '';
+    let tM = 0, tA = 0;
+    const keys = monthKeys(viewMonth);
+    if (!keys.length) {
+      const tr = document.createElement('tr'); const td = document.createElement('td');
+      td.colSpan = 5; td.className = 'empty';
+      td.textContent = ready ? 'Aucune heure ce mois-ci. Cliquez sur « Commencer » ou ajoutez une plage.' : 'Chargement de vos heures…';
+      tr.appendChild(td); tb.appendChild(tr);
+    }
+    keys.forEach(k => {
+      const a = periodMs(k, 'matin'), b = periodMs(k, 'aprem');
+      tM += a; tA += b;
+      const tr = document.createElement('tr');
+      tr.className = 'clickable' + (k === viewDay ? ' current' : '');
+      const cells = [
+        [cap(fromIso(k).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })), ''],
+        [hhmm(a), ''], [hhmm(b), ''], [hhmm(a + b), 'num'], [dec(a + b), 'num hide-sm'],
+      ];
+      cells.forEach(([t, c]) => { const td = document.createElement('td'); td.textContent = t; if (c) td.className = c; tr.appendChild(td); });
+      tr.onclick = () => { viewDay = k; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+      tb.appendChild(tr);
+    });
+    document.getElementById('fM').textContent = hhmm(tM);
+    document.getElementById('fA').textContent = hhmm(tA);
+    document.getElementById('fT').textContent = hhmm(tM + tA);
+    document.getElementById('fD').textContent = dec(tM + tA);
+  }
+
+  async function exportCsv() {
+    const rows = [['Client', 'Date', 'Période', 'Début', 'Fin', 'Durée (h:mm)', 'Durée (décimal)']];
+    const keys = monthKeys(viewMonth);
+    keys.forEach(k => PERIODS.forEach(({ id, name }) => (day(k)[id] || []).forEach(x => {
+      const ms = x.e - x.s;
+      rows.push(['LVMH', fromIso(k).toLocaleDateString('fr-FR'), name, hm(x.s), hm(x.e), hhmm(ms).replace(' h ', ':'), dec(ms)]);
+    })));
+    const total = keys.reduce((a, k) => a + dayMs(k), 0);
+    rows.push(['', '', '', '', 'TOTAL', hhmm(total).replace(' h ', ':'), dec(total)]);
+    const csv = '﻿' + rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(';')).join('\r\n');
+    const filename = `releve-heures-LVMH-${viewMonth}.csv`;
+    if (downloads) {
+      try { await downloads.save({ filename, data: csv }); toast('Export CSV enregistré'); }
+      catch (e) { if (!e || e.code !== 'declined') toast('L’export n’a pas pu être enregistré.'); }
+      return;
+    }
+    if (mode === 'local' && !window.claude) {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+      a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+      toast('Export CSV téléchargé');
+      return;
+    }
+    toast('L’export n’est pas disponible sur cet écran.');
+  }
+
+  let toastT;
+  function toast(msg) {
+    const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600);
+  }
+
+  function shiftDay(n) {
+    const d = fromIso(viewDay); d.setDate(d.getDate() + n);
+    if (iso(d) > today()) return;
+    viewDay = iso(d); viewMonth = viewDay.slice(0, 7); pendingDelete = null; render();
+  }
+  function shiftMonth(n) {
+    const [y, m] = viewMonth.split('-').map(Number); const d = new Date(y, m - 1 + n, 1);
+    viewMonth = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; renderHistory();
+  }
+
+  function render() { renderPeriods(); renderSummary(); renderHistory(); }
+
+  PERIODS.forEach(({ id, el }) => {
+    const root = document.getElementById(el);
+    root.querySelector('[data-toggle]').onclick = () => toggle(id);
+    const form = root.querySelector('[data-form]');
+    const link = root.querySelector('[data-add]');
+    const msg = form.querySelector('[data-msg]');
+    const close = () => { form.hidden = true; link.hidden = false; msg.hidden = true; form.dataset.force = ''; };
+    link.onclick = () => { form.hidden = false; link.hidden = true; form.querySelector('[data-start]').focus(); };
+    root.querySelector('[data-cancel]').onclick = close;
+    form.oninput = () => { form.dataset.force = ''; msg.hidden = true; };
+    form.onsubmit = ev => { ev.preventDefault(); if (addManual(id, form)) close(); };
+  });
+  document.getElementById('prev').onclick = () => shiftDay(-1);
+  document.getElementById('next').onclick = () => shiftDay(1);
+  document.getElementById('mPrev').onclick = () => shiftMonth(-1);
+  document.getElementById('mNext').onclick = () => shiftMonth(1);
+  document.getElementById('export').onclick = exportCsv;
+
+  render();
+  boot();
+  setInterval(() => { if (state.running) { renderPeriods(); renderSummary(); } }, 1000);
+})();
+</script>
